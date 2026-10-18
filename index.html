@@ -162,6 +162,11 @@ footer { margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--line);
         <li><a href="#migrate-new">ขั้นตอนบนเครื่องใหม่</a></li>
         <li><a href="#migrate-path">ถ้า path โปรเจกต์เปลี่ยน</a></li>
         <li><a href="#migrate-check">ตรวจสอบหลังย้าย</a></li>
+        <li class="grp">ประหยัดเวลา</li>
+        <li><a href="#timesave">ใช้ Claude ให้ประหยัดเวลาสูงสุด</a></li>
+        <li><a href="#timesave-prompt">สั่งงานครั้งเดียวให้จบ</a></li>
+        <li><a href="#timesave-away">ให้ Claude ทำงานตอนคุณไม่อยู่</a></li>
+        <li><a href="#timesave-day">จังหวะหนึ่งวัน</a></li>
         <li class="grp">เปลี่ยนแผน</li>
         <li><a href="#team">ย้ายจาก Pro ไป Team</a></li>
         <li><a href="#team-share">แชร์ artifact ในแผน Team</a></li>
@@ -715,7 +720,85 @@ conda env list            # environment ครบ</code></pre></div>
       </div>
     </section>
 
-    <div class="part">ส่วนที่ 7 · เปลี่ยนแผน</div>
+    <div class="part">ส่วนที่ 7 · ประหยัดเวลา</div>
+
+    <section id="timesave">
+      <h2>ใช้ Claude ให้ประหยัดเวลาสูงสุด</h2>
+      <p>หัวข้อก่อนหน้าอธิบายว่าเครื่องมือแต่ละตัวทำอะไรได้ หัวข้อนี้เป็นวิธีทำงาน หลักมีข้อเดียวคือ <strong>สั่งให้ครบในครั้งเดียว ปล่อยให้ Claude ทำ แล้วกลับมาตรวจทีเดียว</strong> เวลาที่ประหยัดได้มากที่สุดไม่ได้มาจากการที่ Claude ทำงานเร็ว แต่มาจากการที่คุณไม่ต้องนั่งเฝ้า</p>
+      <h3>ตั้งค่าครั้งเดียว ใช้ได้ตลอด</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>ตั้งค่า</th><th>ประหยัดเวลาตรงไหน</th><th>ดูวิธี</th></tr></thead>
+        <tbody>
+          <tr><td><code>CLAUDE.md</code> ทุกโปรเจกต์</td><td>ไม่ต้องอธิบายบริบทซ้ำทุก session</td><td><a href="#claudemd">CLAUDE.md</a></td></tr>
+          <tr><td>Permission allowlist</td><td>Claude ไม่หยุดรอให้กดอนุญาตตอนคุณไม่อยู่หน้าจอ</td><td><a href="#permissions">Permissions</a></td></tr>
+          <tr><td>Skills สำหรับงานซ้ำ</td><td>รายงานหรือเอกสารรูปแบบเดิม สั่งบรรทัดเดียวก็เสร็จ</td><td><a href="#skills">Skills</a></td></tr>
+          <tr><td>Hooks</td><td>format โค้ดและรัน test ให้อัตโนมัติ ไม่ต้องสั่งทุกครั้ง</td><td><a href="#hooks">Hooks</a></td></tr>
+          <tr><td>Memory</td><td>Claude จำความชอบและข้อตกลงของคุณข้าม session</td><td><a href="#memory">Memory</a></td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="timesave-prompt">
+      <h2>สั่งงานครั้งเดียวให้จบ</h2>
+      <p>ในข้อความเดียว ให้บอก <strong>เป้าหมาย</strong>, <strong>วิธีเช็กว่าเสร็จ</strong> และ <strong>สิ่งที่ห้ามทำ</strong> Claude จะทำต่อเนื่องจนจบได้โดยไม่ต้องหยุดถาม</p>
+      <div class="choose">
+        <div>
+          <h3>สั่งแบบต้องกลับมาตอบหลายรอบ</h3>
+          <p>"ช่วยดูฟังก์ชัน backtest หน่อย"</p>
+          <p>Claude ต้องถามกลับว่าจะให้ดูเรื่องอะไร แก้หรือแค่อธิบาย และเสร็จแค่ไหนถึงพอ</p>
+        </div>
+        <div>
+          <h3>สั่งแบบทำจนจบได้เอง</h3>
+          <p>"แก้ <code>backtest.py</code> ให้หัก commission 0.157% ทั้งขาซื้อและขาย รัน pytest ให้ผ่านทั้งหมด ห้ามแก้ไฟล์ใน <code>data/</code> แล้วสรุปสั้น ๆ ว่าแก้อะไรไป"</p>
+        </div>
+      </div>
+      <ul>
+        <li><strong>งานใหญ่ หรือยังไม่แน่ใจวิธีทำ:</strong> เริ่มด้วย Plan mode ตรวจแผนครั้งเดียว แล้วปล่อยให้ทำจนจบ</li>
+        <li><strong>งานหลายชิ้นที่ไม่เกี่ยวกัน:</strong> แยก session ละชิ้น ใช้ worktree แล้วส่งออกไปพร้อมกัน</li>
+        <li><strong>ตอนตรวจงาน:</strong> ดูที่ Diff pane ทีเดียวตอนจบ ไม่ต้องอ่านทุกขั้นระหว่างทาง</li>
+      </ul>
+    </section>
+
+    <section id="timesave-away">
+      <h2>ให้ Claude ทำงานตอนคุณไม่อยู่</h2>
+      <div class="tbl"><table>
+        <thead><tr><th>วิธี</th><th>เหมาะกับ</th><th>ตัวอย่าง</th></tr></thead>
+        <tbody>
+          <tr><td>Scheduled task</td><td>งานประจำที่เวลาแน่นอน</td><td>"ทุกวันจันทร์–ศุกร์ 17:30 สแกนหุ้น SET50 แล้วสรุปตัวที่เข้าเงื่อนไข"</td></tr>
+          <tr><td>Morning brief</td><td>เริ่มวันโดยไม่ต้องไล่ดูหลายที่</td><td>สรุปนัดหมายวันนี้และงานที่ค้าง พร้อมไว้ให้อ่านทุกเช้า</td></tr>
+          <tr><td>Cloud session</td><td>งานยาวที่ต้องทำต่อแม้ปิดเครื่อง</td><td>Refactor ทั้ง repo แล้วเปิด PR ไว้ให้ตรวจ</td></tr>
+          <tr><td>หลาย session + worktree</td><td>งานหลายชิ้นที่แยกกันได้</td><td>Session หนึ่งเพิ่ม indicator อีก session แก้บั๊ก</td></tr>
+          <tr><td>PR + Auto-fix</td><td>รอ CI หรือรอคนรีวิว</td><td>CI ล้มตอนกลางคืน Claude แก้และ push ใหม่ให้</td></tr>
+          <tr><td>Remote Control / แอปมือถือ</td><td>ตอบคำถามของ Claude สั้น ๆ ตอนไม่อยู่หน้าคอม</td><td>อนุมัติแผนจากมือถือแล้วปล่อยให้ทำต่อ</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="timesave-day">
+      <h2>จังหวะหนึ่งวัน</h2>
+      <p>ตัวอย่างการจัดเวลาที่ให้ Claude ทำงานในช่วงที่คุณเดินจงกรมหรือนั่งสมาธิ</p>
+      <div class="tbl"><table>
+        <thead><tr><th>เวลา</th><th>คุณทำ</th><th>Claude ทำ</th></tr></thead>
+        <tbody>
+          <tr><td>07:30</td><td>อ่าน morning brief (5 นาที)</td><td>เตรียม brief ไว้แล้วอัตโนมัติ</td></tr>
+          <tr><td>07:35</td><td>มอบงาน 2–3 ชิ้น ด้วยคำสั่งที่ครบในข้อความเดียว (10 นาที)</td><td>เริ่มทำงาน</td></tr>
+          <tr><td>07:45</td><td><strong>เดินจงกรม / นั่งสมาธิ</strong></td><td>ทำงานจนเสร็จ รัน test สรุปผล</td></tr>
+          <tr><td>08:45</td><td>ตรวจผลที่ Diff pane แล้วอนุมัติหรือสั่งแก้ (15 นาที)</td><td>แก้ตามที่สั่ง</td></tr>
+          <tr><td>17:30</td><td>อ่านสรุป</td><td>Scheduled task สรุปงานของวัน</td></tr>
+        </tbody>
+      </table></div>
+      <div class="note"><span class="t">ข้อตกลงกับตัวเอง</span><p>ปิดการแจ้งเตือนระหว่างนั่งสมาธิ แล้วตรวจผลเฉพาะช่วงที่กำหนดไว้ ถ้าคอยเช็กมือถือ เวลาที่ได้คืนมาจะหายไปกับความกังวลแทน</p></div>
+      <div class="note warn"><span class="t">งานที่ไม่ควรปล่อยให้ Claude ทำแทน</span>
+        <ul>
+          <li>ข้อสรุปทางวิชาการ และการตีความผลวิจัย</li>
+          <li>การตัดสินใจลงทุนหรือซื้อขาย</li>
+          <li>งานที่ส่งออกไปภายนอก เช่น อีเมลหรือรายงานถึงผู้บริหาร ควรอ่านทวนก่อนส่งเสมอ</li>
+        </ul>
+        <p>ให้ Claude ทำงานที่ใช้แรงแต่ไม่ต้องใช้วิจารณญาณ ส่วนเวลาที่ได้คืนมา ใช้กับการตัดสินใจและการพักใจ</p>
+      </div>
+    </section>
+
+    <div class="part">ส่วนที่ 8 · เปลี่ยนแผน</div>
 
     <section id="team">
       <h2>ย้ายจาก Pro ไป Team</h2>
