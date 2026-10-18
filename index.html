@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>คู่มือ Claude Code</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky table of contents on the left, one reading column on the right; stacks to one column on phones */
+:root {
+  --bg: #f6f7fa;
+  --surface: #ffffff;
+  --ink: #1b1f2a;
+  --muted: #5a6275;
+  --line: #dfe3ec;
+  --accent: #3446b8;
+  --accent-soft: #e8ebfa;
+  --code-bg: #eef0f6;
+  --warn: #9a5b00;
+  --warn-soft: #fff4e0;
+  --ok: #1d7a4b;
+  --font-display: "Anuphan", "IBM Plex Sans Thai", "Leelawadee UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans Thai", "Leelawadee UI", "Tahoma", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12141b; --surface: #1a1d27; --ink: #e6e8ef; --muted: #9aa2b6; --line: #2b3040;
+    --accent: #8f9cff; --accent-soft: #23284a; --code-bg: #20232f; --warn: #f0b45a; --warn-soft: #2e2416; --ok: #5fcf95;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12141b; --surface: #1a1d27; --ink: #e6e8ef; --muted: #9aa2b6; --line: #2b3040;
+  --accent: #8f9cff; --accent-soft: #23284a; --code-bg: #20232f; --warn: #f0b45a; --warn-soft: #2e2416; --ok: #5fcf95;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.75;
+}
+.wrap {
+  max-width: 1160px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 64px;
+  display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 48px;
+}
+@media (max-width: 860px) { .wrap { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-block: 20px 48px; } }
+
+/* TOC */
+.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start; max-height: calc(100vh - 48px); overflow-y: auto; font-size: 14px; }
+.toc details { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.toc summary { cursor: pointer; padding: 10px 14px; font-weight: 600; font-family: var(--font-display); }
+.toc ol { list-style: none; margin: 0; padding: 4px 8px 12px; display: grid; gap: 1px; }
+.toc .grp { margin-top: 10px; padding: 0 8px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.toc a { display: block; padding: 4px 8px; border-radius: 6px; color: var(--ink); text-decoration: none; line-height: 1.45; }
+.toc a:hover, .toc a:focus-visible { background: var(--accent-soft); color: var(--accent); outline: none; }
+@media (max-width: 860px) { .toc { position: static; max-height: none; } }
+
+/* Content */
+main { min-width: 0; max-width: 760px; }
+header.hero { padding-bottom: 24px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.eyebrow { font-family: var(--font-mono); font-size: 13px; color: var(--accent); letter-spacing: .02em; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.3; }
+h1 { font-size: clamp(30px, 5vw, 42px); margin: 8px 0 12px; font-weight: 700; }
+.lede { font-size: 18px; color: var(--muted); margin: 0; max-width: 62ch; }
+.meta { margin-top: 14px; font-size: 13px; color: var(--muted); font-family: var(--font-mono); }
+.part { margin-top: 56px; padding-top: 4px; font-family: var(--font-mono); font-size: 13px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; border-top: 2px solid var(--ink); }
+section { scroll-margin-top: 24px; }
+h2 { font-size: 26px; margin: 40px 0 12px; font-weight: 700; }
+h2 .k { font-family: var(--font-mono); font-size: 15px; color: var(--accent); font-weight: 500; margin-right: 8px; }
+h3 { font-size: 19px; margin: 28px 0 8px; font-weight: 600; }
+p, li { max-width: 68ch; }
+p { margin: 0 0 14px; }
+ul, ol.steps { padding-left: 22px; margin: 0 0 16px; }
+li { margin-bottom: 6px; }
+a { color: var(--accent); }
+strong { font-weight: 600; }
+
+code { font-family: var(--font-mono); font-size: .88em; background: var(--code-bg); padding: 1px 6px; border-radius: 4px; overflow-wrap: anywhere; }
+kbd { font-family: var(--font-mono); font-size: .85em; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; background: var(--surface); }
+.code { position: relative; margin: 0 0 18px; }
+.code .lbl { font-family: var(--font-mono); font-size: 12px; color: var(--muted); padding: 6px 14px; border: 1px solid var(--line); border-bottom: 0; border-radius: 8px 8px 0 0; background: var(--surface); }
+.code pre { margin: 0; overflow-x: auto; background: var(--code-bg); border: 1px solid var(--line); border-radius: 0 0 8px 8px; padding: 14px 16px; font-family: var(--font-mono); font-size: 13.5px; line-height: 1.6; }
+.code pre code { background: none; padding: 0; font-size: inherit; overflow-wrap: normal; }
+.code .copy { position: absolute; top: 3px; right: 6px; font: 500 12px var(--font-body); color: var(--muted); background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 2px 10px; cursor: pointer; }
+.code .copy:hover, .code .copy:focus-visible { color: var(--accent); border-color: var(--accent); outline: none; }
+
+.tbl { overflow-x: auto; margin: 0 0 20px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 14px; border-bottom: 1px solid var(--line); line-height: 1.55; }
+th { font-family: var(--font-display); font-weight: 600; background: var(--code-bg); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td:first-child { font-weight: 500; }
+
+.note { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 0 0 18px; }
+.note.warn { border-color: var(--warn); background: var(--warn-soft); }
+.note p:last-child, .note ul:last-child { margin-bottom: 0; }
+.note .t { font-weight: 600; display: block; margin-bottom: 2px; }
+
+.flow { font-family: var(--font-mono); font-size: 13px; }
+.pill { display: inline-block; font-family: var(--font-mono); font-size: 12px; padding: 0 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); }
+.pill.ok { color: var(--ok); border-color: currentColor; }
+.pill.no { color: var(--warn); border-color: currentColor; }
+
+.choose { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 0 0 20px; }
+@media (max-width: 600px) { .choose { grid-template-columns: minmax(0, 1fr); } }
+.choose > div { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 16px 18px; min-width: 0; }
+.choose h3 { margin-top: 0; }
+.choose ul { margin-bottom: 0; }
+
+ol.steps { counter-reset: s; list-style: none; padding-left: 0; }
+ol.steps > li { counter-increment: s; position: relative; padding-left: 40px; margin-bottom: 18px; }
+ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 2px; width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: var(--surface); font: 600 13px/26px var(--font-mono); text-align: center; }
+
+footer { margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <nav class="toc" aria-label="สารบัญ">
+    <details id="toc-details" open>
+      <summary>สารบัญ</summary>
+      <ol>
+        <li class="grp">พื้นฐาน</li>
+        <li><a href="#overview">Claude Code คืออะไร</a></li>
+        <li><a href="#session-menu">Session และเมนู "..."</a></li>
+        <li><a href="#composer">ตัวเลือกช่องพิมพ์และ Pane</a></li>
+        <li class="grp">Git และ PR</li>
+        <li><a href="#pr">Open PR</a></li>
+        <li><a href="#worktree">Git Worktree</a></li>
+        <li class="grp">ตั้งค่าโปรเจกต์</li>
+        <li><a href="#claudemd">CLAUDE.md</a></li>
+        <li><a href="#permissions">Permissions</a></li>
+        <li><a href="#hooks">Hooks</a></li>
+        <li><a href="#memory">Memory</a></li>
+        <li class="grp">ต่อยอด</li>
+        <li><a href="#plan">Plan Mode</a></li>
+        <li><a href="#schedule">/loop และ /schedule</a></li>
+        <li><a href="#mcp">MCP</a></li>
+        <li><a href="#skills">Skills</a></li>
+        <li><a href="#agents">Sub-agents</a></li>
+        <li><a href="#context">Context และค่าใช้จ่าย</a></li>
+        <li><a href="#rewind">Checkpoint / Rewind</a></li>
+        <li class="grp">เลือกเครื่องมือและเผยแพร่</li>
+        <li><a href="#desktop-cli">Desktop vs CLI</a></li>
+        <li><a href="#artifacts">Artifacts และการจ่ายเงิน</a></li>
+        <li><a href="#ghpages">เผยแพร่บน GitHub Pages</a></li>
+      </ol>
+    </details>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div class="eyebrow">claude-code / คู่มือภาษาไทย</div>
+      <h1>คู่มือ Claude Code</h1>
+      <p class="lede">ตั้งแต่การใช้งาน session ใน Desktop app การเปิด PR การตั้งค่าโปรเจกต์ ไปจนถึงการเลือกระหว่าง Desktop กับ command line พร้อมตัวอย่างจากโปรเจกต์วิเคราะห์หุ้นด้วย Python</p>
+      <div class="meta">ปรับปรุงล่าสุด 18 ต.ค. 2026 · เมนูในแอปอาจต่างกันเล็กน้อยตามเวอร์ชัน</div>
+    </header>
+
+    <div class="part">ส่วนที่ 1 · พื้นฐาน</div>
+
+    <section id="overview">
+      <h2>Claude Code คืออะไร</h2>
+      <p>Claude Code เป็นผู้ช่วยเขียนโค้ดแบบ agent ไม่ได้แค่ตอบคำถาม แต่ลงมือทำงานในเครื่องคุณได้เอง เช่น อ่านและแก้ไฟล์ รันคำสั่ง PowerShell/Bash ค้นหาโค้ด เปิดเบราว์เซอร์ทดสอบเว็บ และทำงานกับ git/GitHub</p>
+      <p>ใช้ได้หลายช่องทาง ได้แก่ CLI ใน terminal (<code>claude</code>), Desktop app บน Mac/Windows (แท็บ Code), เว็บ claude.ai/code และ extension ของ VS Code / JetBrains ทุกช่องทางใช้ engine และไฟล์ตั้งค่าชุดเดียวกัน</p>
+      <div class="tbl"><table>
+        <thead><tr><th>ส่วนของหน้าจอ</th><th>หน้าที่</th></tr></thead>
+        <tbody>
+          <tr><td>Sidebar ซ้าย</td><td>รายการ session ทั้งหมด จัดเป็นกลุ่มหรือ section ได้</td></tr>
+          <tr><td>Transcript กลาง</td><td>บทสนทนา ผลการใช้ tool และ task list ที่ Claude อัปเดตระหว่างทำงาน</td></tr>
+          <tr><td>ช่องพิมพ์ด้านล่าง</td><td>พิมพ์คำสั่ง แนบไฟล์/รูป เลือก model, permission mode และ effort</td></tr>
+          <tr><td>Pane ขวา</td><td>Diff, Terminal, Browser, PR, Tasks, Plan, Artifacts</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="session-menu">
+      <h2>Session และเมนู "..."</h2>
+      <p>Session คือบทสนทนาหนึ่งชุดที่ผูกกับโฟลเดอร์ทำงาน Claude จำบริบทได้ตลอด session และเมื่อยาวมากจะสรุปบริบทให้อัตโนมัติ เพิ่มโฟลเดอร์ทำงานได้หลายโฟลเดอร์ และถ้าเป็น git repo จะเลือกให้ทำงานใน worktree แยกได้</p>
+      <p>เมนู "..." กดได้จากแถว session ใน sidebar (หรือคลิกขวา) และจากหัวของ session</p>
+      <div class="tbl"><table>
+        <thead><tr><th>เมนู</th><th>ใช้ทำอะไร</th></tr></thead>
+        <tbody>
+          <tr><td>Rename</td><td>ตั้งชื่อ session ใหม่ให้หาง่าย</td></tr>
+          <tr><td>Pin / Unpin</td><td>ปักหมุดไว้บนสุดของ sidebar</td></tr>
+          <tr><td>Mark as unread</td><td>ทำเครื่องหมายว่ายังไม่อ่าน ไว้กลับมาดูทีหลัง</td></tr>
+          <tr><td>Mark completed</td><td>ทำเครื่องหมายว่างานเสร็จแล้ว</td></tr>
+          <tr><td>Move to group</td><td>ย้ายไปไว้ในกลุ่ม เช่น "งานหุ้น" หรือ "งาน NSTDA"</td></tr>
+          <tr><td>Open in → Split view</td><td>เปิดหลาย session คู่กันในหน้าต่างเดียว (ลาก session ไปวางก็ได้)</td></tr>
+          <tr><td>Fork</td><td>คัดลอกบทสนทนาเป็น session ใหม่ เพื่อลองอีกแนวทางโดยไม่กระทบของเดิม</td></tr>
+          <tr><td>Export transcript</td><td>ส่งออกบทสนทนาเป็นไฟล์</td></tr>
+          <tr><td>Move to cloud</td><td>ย้ายไปรันบน cloud ทำงานต่อได้แม้ปิดเครื่อง (ต้องเป็น GitHub repo)</td></tr>
+          <tr><td>Remote Control</td><td>สั่งงาน session นี้จากเครื่องอื่นหรือมือถือ</td></tr>
+          <tr><td>Reveal / Open in editor</td><td>เปิดโฟลเดอร์ใน Explorer หรือ VS Code</td></tr>
+          <tr><td>Clear</td><td>ล้างบทสนทนาแต่เก็บ session ไว้</td></tr>
+          <tr><td>Stop</td><td>หยุดงานที่กำลังทำอยู่</td></tr>
+          <tr><td>Archive</td><td>ซ่อนจาก sidebar โดยไม่ลบ กู้คืนได้</td></tr>
+          <tr><td>Delete</td><td>ลบถาวร กู้คืนไม่ได้</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="composer">
+      <h2>ตัวเลือกช่องพิมพ์และ Pane</h2>
+      <div class="tbl"><table>
+        <thead><tr><th>ตัวเลือก</th><th>รายละเอียด</th></tr></thead>
+        <tbody>
+          <tr><td>Model</td><td>Opus เก่งที่สุด, Sonnet สมดุล, Haiku เร็วและถูก</td></tr>
+          <tr><td>Effort</td><td>ระดับความลึกในการคิด low ถึง max ยิ่งสูงยิ่งละเอียด แต่ช้าและใช้ token มากขึ้น</td></tr>
+          <tr><td>Fast mode</td><td>Opus ที่ตอบเร็วขึ้น โดยไม่ได้ลดขนาด model</td></tr>
+          <tr><td>Permission mode</td><td><strong>Ask</strong> ถามก่อนทุกครั้ง · <strong>Accept edits</strong> แก้ไฟล์ได้เลย · <strong>Plan</strong> วางแผนก่อนลงมือ · <strong>Bypass</strong> ไม่ถามเลย (ใช้ด้วยความระวัง)</td></tr>
+          <tr><td>แนบไฟล์/รูป</td><td>ลากวางได้ เช่น ภาพ error, PDF, Excel</td></tr>
+        </tbody>
+      </table></div>
+      <p><strong>Pane ด้านขวา</strong> มี Diff สำหรับดูการแก้ไขทีละบรรทัด, Terminal ที่ Claude อ่านได้เมื่อคุณพูดถึง error ที่เพิ่งรัน, Browser สำหรับ preview เว็บ, PR สำหรับดูสถานะและ CI, Tasks/Plan สำหรับดูแผนงาน และ Artifacts สำหรับหน้าเว็บที่ Claude สร้าง</p>
+    </section>
+
+    <div class="part">ส่วนที่ 2 · Git และ PR</div>
+
+    <section id="pr">
+      <h2><span class="k">PR</span>Open PR คืออะไร</h2>
+      <p>Pull Request คือ <strong>คำขอให้นำโค้ดจาก branch หนึ่งไปรวมเข้ากับอีก branch</strong> ซึ่งมักเป็น <code>main</code> PR ทำหน้าที่เป็นพื้นที่กลางของการเปลี่ยนแปลงชุดนั้น แสดง diff ให้คนอื่น review และคอมเมนต์รายบรรทัด รัน CI (เช่น pytest หรือ lint) ก่อนรวม และเก็บประวัติว่าใครแก้อะไร ทำไม เมื่อไร</p>
+      <div class="code"><div class="lbl">วงจรชีวิตของ PR</div><pre class="flow"><code>main ──●──────────────────────────●──  (merge แล้ว)
+        \                        /
+feature  ●──●──●  → push → PR → review → CI ✓ → merge
+        (commit)          (แก้ตามคอมเมนต์ → push เพิ่ม)</code></pre></div>
+      <ol class="steps">
+        <li>สร้าง branch เช่น <code>feature/add-rsi</code></li>
+        <li>Commit การแก้ไข</li>
+        <li>Push ขึ้น GitHub</li>
+        <li>Open PR พร้อมชื่อและคำอธิบายว่าแก้อะไร ทำไม และทดสอบอย่างไร</li>
+        <li>CI รันอัตโนมัติ ถ้าล้มก็แก้แล้ว push ใหม่ PR จะอัปเดตเอง</li>
+        <li>Review และแก้ตามคอมเมนต์</li>
+        <li>Merge เข้า <code>main</code> แล้วลบ branch</li>
+      </ol>
+      <p>มี <strong>Draft PR</strong> สำหรับงานที่ยังไม่เสร็จ แต่อยากให้คนเห็นหรือให้ CI รันไปก่อน</p>
+
+      <h3>Claude Code ช่วยอะไรได้บ้าง</h3>
+      <p>เมื่อแก้โค้ดเสร็จใน git repo แอปจะมีปุ่ม <strong>Commit</strong> และ <strong>Create PR</strong> หรือจะพิมพ์ว่า "เปิด PR ให้หน่อย" ก็ได้ Claude จะสร้าง branch, commit, push แล้วเปิด PR ด้วย <code>gh pr create</code> พร้อมเขียนคำอธิบายให้ จากนั้น PR จะผูกเข้ากับ session</p>
+      <div class="tbl"><table>
+        <thead><tr><th>ฟีเจอร์</th><th>ทำอะไร</th></tr></thead>
+        <tbody>
+          <tr><td>CI status</td><td>ดูผล test ใน PR pane</td></tr>
+          <tr><td>Auto-fix</td><td>แอปเฝ้าดู PR ให้ ถ้า CI ล้ม มี conflict หรือมีคอมเมนต์ จะให้ Claude แก้และ push เอง</td></tr>
+          <tr><td>Fix CI / Address comments / Resolve conflicts</td><td>สั่งแก้แต่ละเรื่องแบบครั้งเดียว</td></tr>
+          <tr><td>Auto-merge</td><td>merge อัตโนมัติเมื่อทุกอย่างผ่าน (เปิดเฉพาะเมื่อสั่ง)</td></tr>
+        </tbody>
+      </table></div>
+      <div class="note"><span class="t">ตัวอย่าง</span><p>"เพิ่มฟังก์ชันคำนวณ RSI ใน <code>indicators.py</code> พร้อม test แล้วเปิด PR" Claude จะเขียนโค้ด รัน pytest สร้าง branch และเปิด PR ถ้า CI บน GitHub ล้มเพราะ Python คนละเวอร์ชัน Auto-fix จะอ่าน log แก้ไข แล้ว push ให้</p></div>
+      <div class="note warn"><span class="t">เงื่อนไข</span><p>โฟลเดอร์ต้องเป็น git repo ที่มี GitHub remote และต้องติดตั้งและ login GitHub CLI (<code>gh auth login</code>) แล้ว</p></div>
+    </section>
+
+    <section id="worktree">
+      <h2>Git Worktree</h2>
+      <p>ถ้าสอง session แก้ไฟล์ในโฟลเดอร์เดียวกันพร้อมกัน งานจะทับกัน worktree แก้ปัญหานี้ด้วยการ checkout branch อื่นไปไว้อีกโฟลเดอร์ โดยใช้ repo ร่วมกัน</p>
+      <div class="code"><div class="lbl">โครงสร้าง</div><pre><code>stock\                 ← main (โฟลเดอร์หลัก)
+stock-worktrees\
+  ├─ add-macd\         ← branch feature/add-macd  (session A)
+  └─ fix-commission\   ← branch fix/commission    (session B)</code></pre></div>
+      <p><strong>ใน Desktop app</strong> ตอนสร้าง session ในโฟลเดอร์ที่เป็น git repo ให้เลือกใช้ worktree แอปจะสร้าง branch และโฟลเดอร์ให้ แล้วเก็บกวาดให้เมื่อ archive</p>
+      <div class="code"><div class="lbl">ทำเองด้วยคำสั่ง</div><pre><code>git worktree add ../stock-macd -b feature/add-macd</code></pre></div>
+      <p>ตัวอย่าง: session A เพิ่ม indicator MACD ขณะที่ session B แก้บั๊ก backtest ที่คิด commission ผิด ทั้งคู่ทำงานพร้อมกันและเปิด PR ของตัวเองได้โดยไม่ชนกัน</p>
+    </section>
+
+    <div class="part">ส่วนที่ 3 · ตั้งค่าโปรเจกต์</div>
+
+    <section id="claudemd">
+      <h2>CLAUDE.md</h2>
+      <p>คู่มือโปรเจกต์ที่ Claude โหลดเข้ามาเป็นบริบทอัตโนมัติทุกครั้งที่เริ่ม session</p>
+      <div class="tbl"><table>
+        <thead><tr><th>ตำแหน่ง</th><th>ขอบเขต</th></tr></thead>
+        <tbody>
+          <tr><td><code>~\.claude\CLAUDE.md</code></td><td>ทุกโปรเจกต์ (ความชอบส่วนตัว)</td></tr>
+          <tr><td><code>&lt;project&gt;\CLAUDE.md</code></td><td>เฉพาะโปรเจกต์ แชร์ผ่าน git ได้</td></tr>
+          <tr><td><code>&lt;project&gt;\CLAUDE.local.md</code></td><td>เฉพาะคุณ ไม่ควร commit</td></tr>
+          <tr><td><code>&lt;project&gt;\sub\CLAUDE.md</code></td><td>โหลดเมื่อทำงานในโฟลเดอร์ย่อยนั้น</td></tr>
+        </tbody>
+      </table></div>
+      <div class="code"><div class="lbl">CLAUDE.md · ตัวอย่างโปรเจกต์หุ้น</div><button class="copy" type="button">คัดลอก</button><pre><code># Stock Analysis Project
+
+## ภาพรวม
+วิเคราะห์หุ้น SET ด้วย Python: ดึงข้อมูล → คำนวณ indicator → backtest → รายงาน
+
+## Environment
+- Python 3.11, venv ที่ `.venv`
+- รัน: `.venv\Scripts\python main.py`
+- ทดสอบ: `.venv\Scripts\pytest -q`
+
+## โครงสร้าง
+- `data/` ข้อมูลดิบ (ห้ามแก้ ห้ามลบ)
+- `indicators/` pure function รับ DataFrame คืน Series
+- `backtest/` engine และ strategy
+
+## กฎ
+- ใช้ pandas แบบ vectorize ห้าม loop บน DataFrame ถ้าไม่จำเป็น
+- ราคาเป็น THB วันที่เป็น Asia/Bangkok
+- ตอบภาษาไทย ชื่อตัวแปรภาษาอังกฤษ
+- indicator ใหม่ทุกตัวต้องมี test ใน `tests/`
+
+@docs/strategy-notes.md</code></pre></div>
+      <ul>
+        <li>บรรทัด <code>@path</code> ใช้ import ไฟล์อื่นเข้ามาเป็นบริบท</li>
+        <li>เริ่มด้วย <code>/init</code> ให้ Claude ร่างให้ก่อน แล้วค่อยปรับ</li>
+        <li>เขียนสั้นและชัด เพราะทุกบรรทัดกิน token ทุกครั้ง</li>
+        <li>ถ้า Claude ทำผิดซ้ำ ให้เพิ่มกฎลงไฟล์นี้</li>
+      </ul>
+    </section>
+
+    <section id="permissions">
+      <h2>Permissions และ settings.json</h2>
+      <p>ใช้ลดการขออนุญาตซ้ำ ๆ และกันไม่ให้ Claude แตะสิ่งที่ไม่ควรแตะ</p>
+      <div class="tbl"><table>
+        <thead><tr><th>ไฟล์</th><th>ขอบเขต</th></tr></thead>
+        <tbody>
+          <tr><td><code>~\.claude\settings.json</code></td><td>ทุกโปรเจกต์</td></tr>
+          <tr><td><code>.claude\settings.json</code></td><td>โปรเจกต์ แชร์ทีมได้</td></tr>
+          <tr><td><code>.claude\settings.local.json</code></td><td>โปรเจกต์ เฉพาะคุณ</td></tr>
+        </tbody>
+      </table></div>
+      <div class="code"><div class="lbl">.claude/settings.json</div><button class="copy" type="button">คัดลอก</button><pre><code>{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "Bash(pytest:*)",
+      "Bash(git status)",
+      "Bash(git diff:*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./secrets/**)",
+      "Bash(rm -rf:*)"
+    ]
+  }
+}</code></pre></div>
+      <p>ความหมายคือ รัน python และ pytest ได้โดยไม่ต้องถาม แต่ห้ามอ่านไฟล์ API key และห้ามลบแบบ recursive ถ้าไม่อยากเขียนเอง ใช้ <code>/fewer-permission-prompts</code> ให้ Claude สแกนประวัติแล้วเสนอ allowlist ให้</p>
+    </section>
+
+    <section id="hooks">
+      <h2>Hooks</h2>
+      <p>Hook คือคำสั่ง shell ที่ <strong>ระบบรันเองตามเหตุการณ์</strong> Claude ไม่ได้เป็นผู้ตัดสินใจ จึงรับประกันได้ว่าเกิดขึ้นทุกครั้ง</p>
+      <div class="tbl"><table>
+        <thead><tr><th>Event</th><th>เกิดเมื่อ</th></tr></thead>
+        <tbody>
+          <tr><td><code>PreToolUse</code></td><td>ก่อนใช้ tool (บล็อกได้)</td></tr>
+          <tr><td><code>PostToolUse</code></td><td>หลังใช้ tool</td></tr>
+          <tr><td><code>UserPromptSubmit</code></td><td>เมื่อคุณส่งข้อความ</td></tr>
+          <tr><td><code>Stop</code></td><td>เมื่อ Claude ตอบเสร็จ</td></tr>
+          <tr><td><code>SessionStart</code></td><td>เมื่อเริ่ม session</td></tr>
+          <tr><td><code>Notification</code></td><td>เมื่อ Claude รอคุณตอบ</td></tr>
+        </tbody>
+      </table></div>
+      <div class="code"><div class="lbl">format โค้ดทุกครั้งที่แก้ไฟล์</div><button class="copy" type="button">คัดลอก</button><pre><code>{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          { "type": "command", "command": "ruff format ." }
+        ]
+      }
+    ]
+  }
+}</code></pre></div>
+      <p>ไอเดียอื่น: ใช้ <code>Stop</code> รัน pytest ทุกครั้งที่ทำงานเสร็จ, ใช้ <code>PreToolUse</code> บล็อกการแก้ไฟล์ใน <code>data/</code> หรือใช้ <code>Notification</code> ส่งเสียงเตือน ถ้าไม่อยากเขียน JSON เอง บอกเป็นภาษาธรรมดาได้ เช่น "ทุกครั้งที่แก้ไฟล์ .py ให้รัน ruff"</p>
+    </section>
+
+    <section id="memory">
+      <h2>Memory</h2>
+      <p>พูดว่า "จำไว้ว่าผมใช้ Python 3.11 และชอบคำตอบสั้น" แล้ว Claude จะบันทึกไว้ session ต่อ ๆ ไปจะรู้เอง</p>
+      <ul>
+        <li><strong>Memory</strong> เก็บความชอบหรือข้อเท็จจริงเกี่ยวกับตัวคุณ Claude เป็นผู้บันทึก</li>
+        <li><strong>CLAUDE.md</strong> เก็บกฎของโปรเจกต์ คุณเป็นผู้เขียน และแชร์ทีมได้</li>
+      </ul>
+    </section>
+
+    <div class="part">ส่วนที่ 4 · ต่อยอด</div>
+
+    <section id="plan">
+      <h2>Plan Mode</h2>
+      <p>ในโหมดนี้ Claude ทำได้แค่อ่านและสำรวจโค้ด แล้วเสนอแผนให้คุณอนุมัติก่อน เหมาะกับงานที่แตะหลายไฟล์ งาน refactor หรือเมื่อยังไม่แน่ใจว่าควรทำแบบไหน</p>
+      <div class="note"><span class="t">ตัวอย่าง</span><p>"อยากเปลี่ยนจากเก็บข้อมูลเป็น CSV ไปใช้ SQLite" Claude จะเสนอแผน: สร้าง schema → เขียน migration → แก้ <code>loader.py</code> → แก้ test → เทียบผลกับ CSV เดิม คุณปรับแผนได้ก่อนกดอนุมัติ</p></div>
+      <p>Desktop: เลือกจาก permission mode ในช่องพิมพ์ · CLI: กด <kbd>Shift</kbd>+<kbd>Tab</kbd> เพื่อวนเปลี่ยนโหมด</p>
+    </section>
+
+    <section id="schedule">
+      <h2>/loop และ /schedule</h2>
+      <div class="tbl"><table>
+        <thead><tr><th>วิธี</th><th>ทำงานที่ไหน</th><th>เหมาะกับ</th></tr></thead>
+        <tbody>
+          <tr><td><code>/loop 10m …</code></td><td>ใน session นี้ ขณะที่เปิดอยู่</td><td>เฝ้าดูอะไรสั้น ๆ</td></tr>
+          <tr><td>Scheduled task</td><td>บนเครื่องคุณ ตามเวลา</td><td>งานประจำที่ใช้ไฟล์ในเครื่อง</td></tr>
+          <tr><td><code>/schedule</code></td><td>บน cloud แม้ปิดเครื่อง</td><td>งานประจำบน GitHub repo</td></tr>
+        </tbody>
+      </table></div>
+      <div class="code"><div class="lbl">ตัวอย่าง</div><button class="copy" type="button">คัดลอก</button><pre><code>/loop 15m เช็คว่า data/today.csv อัปเดตแล้วหรือยัง ถ้าแล้วให้รัน report.py
+
+ทุกวันจันทร์–ศุกร์ 17:30 ดึงราคาปิด SET50 รัน backtest แล้วสรุปหุ้นที่เข้าเงื่อนไข</code></pre></div>
+    </section>
+
+    <section id="mcp">
+      <h2>MCP</h2>
+      <p>MCP (Model Context Protocol) คือปลั๊กอินที่เพิ่ม tool ใหม่ให้ Claude เช่น ฐานข้อมูล, Google Calendar, Slack, Notion หรือ API ภายในองค์กร</p>
+      <div class="code"><div class="lbl">เพิ่มผ่าน CLI</div><button class="copy" type="button">คัดลอก</button><pre><code>claude mcp add sqlite -- npx -y @modelcontextprotocol/server-sqlite --db-path ./stock.db</code></pre></div>
+      <div class="code"><div class="lbl">.mcp.json · แชร์กับทีม</div><button class="copy" type="button">คัดลอก</button><pre><code>{
+  "mcpServers": {
+    "sqlite": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sqlite", "--db-path", "./stock.db"]
+    }
+  }
+}</code></pre></div>
+      <p>จากนั้นถามได้เลย เช่น "หุ้นตัวไหนมี volume เฉลี่ย 20 วันสูงสุด" Claude จะ query ให้ ใน Desktop app ยังมี <strong>Connectors</strong> ที่เชื่อมผ่านบัญชี claude.ai ได้โดยไม่ต้องตั้งค่าเอง</p>
+    </section>
+
+    <section id="skills">
+      <h2>Skills</h2>
+      <p>Skill คือโฟลเดอร์ที่มีคำสั่งและสคริปต์ Claude จะโหลดเมื่องานตรงกับคำอธิบาย หรือเมื่อเรียกด้วย <code>/ชื่อ</code></p>
+      <div class="code"><div class="lbl">.claude/skills/stock-report/SKILL.md</div><button class="copy" type="button">คัดลอก</button><pre><code>---
+name: stock-report
+description: สร้างรายงานวิเคราะห์หุ้นรายตัว ใช้เมื่อผู้ใช้ขอ "วิเคราะห์หุ้น X"
+---
+1. โหลดข้อมูลจาก data/&lt;SYMBOL&gt;.csv
+2. คำนวณ SMA20/50, RSI14, MACD ด้วย indicators/
+3. สร้างกราฟด้วย matplotlib บันทึกที่ reports/&lt;SYMBOL&gt;.png
+4. สรุปภาษาไทย: แนวโน้ม แนวรับ/ต้าน สัญญาณ
+5. รายงานข้อเท็จจริงเท่านั้น ไม่ให้คำแนะนำซื้อขาย</code></pre></div>
+      <p>เรียกใช้ด้วย <code>/stock-report PTT</code> หรือพิมพ์ "วิเคราะห์หุ้น PTT" ใช้ <code>/skill-creator</code> ช่วยสร้างและทดสอบ skill ได้</p>
+    </section>
+
+    <section id="agents">
+      <h2>Sub-agents</h2>
+      <p>นิยามไว้ที่ <code>.claude\agents\&lt;name&gt;.md</code> เป็นผู้ช่วยเฉพาะทางที่มีบริบทแยกจาก session หลัก จึงไม่ทำให้บทสนทนาหลักรก</p>
+      <div class="code"><div class="lbl">.claude/agents/data-validator.md</div><button class="copy" type="button">คัดลอก</button><pre><code>---
+name: data-validator
+description: ตรวจคุณภาพข้อมูลราคาหุ้น หาวันที่หายไป ราคาผิดปกติ
+tools: Read, Grep, Bash
+---
+ตรวจไฟล์ CSV ใน data/ หา: วันซื้อขายที่ขาด, ราคา ≤ 0, high &lt; low,
+การเปลี่ยนแปลง &gt; 30% ในวันเดียว แล้วรายงานเป็นตาราง</code></pre></div>
+    </section>
+
+    <section id="context">
+      <h2>Context และค่าใช้จ่าย</h2>
+      <div class="tbl"><table>
+        <thead><tr><th>คำสั่ง</th><th>ทำอะไร</th></tr></thead>
+        <tbody>
+          <tr><td><code>/clear</code></td><td>ล้างบทสนทนา เริ่มงานใหม่ (ประหยัดสุด)</td></tr>
+          <tr><td><code>/compact</code></td><td>สรุปบทสนทนาให้สั้นลงแต่ยังจำประเด็นหลักได้</td></tr>
+          <tr><td><code>/context</code></td><td>ดูว่า context เต็มแค่ไหน</td></tr>
+          <tr><td><code>/usage</code></td><td>ดูการใช้งานหรือโควตา</td></tr>
+        </tbody>
+      </table></div>
+      <p>หลักทั่วไปคือหนึ่งงานต่อหนึ่ง session ถ้าบทสนทนายาวและเริ่มเปลี่ยนเรื่อง ให้เปิด session ใหม่</p>
+    </section>
+
+    <section id="rewind">
+      <h2>Checkpoint / Rewind</h2>
+      <p>Claude เก็บสถานะไฟล์ก่อนแก้ทุกครั้ง ใน CLI กด <kbd>Esc</kbd> สองครั้งหรือใช้ <code>/rewind</code> เพื่อเลือกจุดที่จะย้อนกลับ ส่วนใน Desktop ใช้ปุ่มย้อนกลับในข้อความ หรือ fork จากจุดก่อนหน้า</p>
+      <div class="note warn"><p>Checkpoint ย้อนได้เฉพาะไฟล์ที่ Claude แก้ ผลของคำสั่ง shell เช่น ลบไฟล์หรือเขียน DB ย้อนไม่ได้ ควรใช้ git คู่กันเสมอ</p></div>
+    </section>
+
+    <div class="part">ส่วนที่ 5 · เลือกเครื่องมือและเผยแพร่</div>
+
+    <section id="desktop-cli">
+      <h2>Desktop vs Command Line</h2>
+      <p>ทั้งสองใช้ engine เดียวกัน เก่งเท่ากัน และใช้ <code>CLAUDE.md</code>, <code>settings.json</code>, hooks, skills, MCP และ memory ชุดเดียวกัน ตั้งค่าครั้งเดียวใช้ได้ทั้งสองที่</p>
+      <div class="tbl"><table>
+        <thead><tr><th>ด้าน</th><th>Desktop</th><th>CLI</th></tr></thead>
+        <tbody>
+          <tr><td>ความง่าย</td><td>คลิกได้ เหมาะกับมือใหม่</td><td>ต้องคุ้นกับ terminal</td></tr>
+          <tr><td>ดู Diff</td><td>pane แบบกราฟิก</td><td>ข้อความใน terminal</td></tr>
+          <tr><td>หลาย session</td><td>sidebar, split view, กลุ่ม</td><td>หลาย terminal หรือ tmux</td></tr>
+          <tr><td>Browser ในตัว</td><td><span class="pill ok">มี</span></td><td><span class="pill no">ไม่มี</span> ใช้ Chrome extension</td></tr>
+          <tr><td>Computer use</td><td><span class="pill ok">มี</span></td><td>จำกัด</td></tr>
+          <tr><td>PR pane / Auto-fix</td><td><span class="pill ok">มี</span></td><td>ใช้ <code>gh</code> เอง</td></tr>
+          <tr><td>Scripting</td><td><span class="pill no">ไม่มี</span></td><td><span class="pill ok">มี</span> <code>claude -p</code></td></tr>
+          <tr><td>CI/CD</td><td><span class="pill no">ไม่มี</span></td><td><span class="pill ok">มี</span> GitHub Actions</td></tr>
+          <tr><td>Server ระยะไกล</td><td>ผ่าน SSH ในแอป</td><td>รันบน server โดยตรง</td></tr>
+          <tr><td>ทรัพยากรเครื่อง</td><td>ใช้มากกว่า</td><td>เบา</td></tr>
+        </tbody>
+      </table></div>
+      <div class="code"><div class="lbl">คำสั่ง CLI ที่ใช้บ่อย</div><button class="copy" type="button">คัดลอก</button><pre><code>claude                      # เริ่ม session
+claude --continue           # ทำต่อจาก session ล่าสุด
+claude --resume             # เลือก session เก่า
+claude -p "สรุป error ใน log นี้" &lt; app.log
+git diff | claude -p "เขียน commit message จาก diff นี้"</code></pre></div>
+      <div class="choose">
+        <div>
+          <h3>ใช้ Desktop เมื่อ</h3>
+          <ul>
+            <li>อยากเห็นภาพรวมและรีวิว diff ชัด ๆ</li>
+            <li>ทำหลายงานและสลับไปมาบ่อย</li>
+            <li>ทำเว็บหรือ dashboard แล้วอยาก preview ทันที</li>
+            <li>งานเอกสาร Excel/Word/PDF หรือควบคุมแอป</li>
+            <li>ใช้ PR พร้อม Auto-fix</li>
+          </ul>
+        </div>
+        <div>
+          <h3>ใช้ CLI เมื่อ</h3>
+          <ul>
+            <li>ถนัดคีย์บอร์ดและต้องการความเร็ว</li>
+            <li>ทำ automation ด้วย script หรือ Task Scheduler</li>
+            <li>ทำงานบน Linux หรือ GPU server ผ่าน SSH</li>
+            <li>ต้อง pipe ข้อมูลกับเครื่องมืออื่น</li>
+            <li>เครื่องสเปกต่ำ หรือใช้ terminal ใน IDE อยู่แล้ว</li>
+          </ul>
+        </div>
+      </div>
+      <p><strong>แนะนำให้ใช้ผสมกัน</strong> ใช้ Desktop สำหรับงานประจำวันและการรีวิว และใช้ CLI (<code>claude -p</code>) สำหรับงานอัตโนมัติหรือบน server</p>
+    </section>
+
+    <section id="artifacts">
+      <h2>Artifacts และการจ่ายเงิน</h2>
+      <p>Artifact คือหน้าเว็บส่วนตัวบน claude.ai ที่ Claude สร้างให้และแชร์ลิงก์ได้ ข้อมูลจากศูนย์ช่วยเหลือของ Anthropic มีดังนี้</p>
+      <ul>
+        <li>ถ้าไม่ต่ออายุ แผน Pro/Max ยังใช้ได้จนจบรอบบิล แล้วบัญชีจะกลับเป็นแผน Free โดยข้อมูลไม่ถูกลบ</li>
+        <li>แผน Free ยังเผยแพร่ artifact ได้ แต่ artifact จะผูกอยู่กับแชทที่สร้างมัน</li>
+        <li>เอกสารไม่ได้ระบุว่าลิงก์ที่เผยแพร่ไว้จะยังเปิดได้ช่วงแผน Free หรือไม่ และฟีเจอร์ขั้นสูง เช่น ฐานข้อมูลร่วม อาจใช้ไม่ได้</li>
+      </ul>
+      <div class="note warn"><span class="t">กู้คืนไม่ได้</span><p>ถ้ากด Unpublish หรือลบ artifact จะกู้คืนไม่ได้ และข้อมูลที่หน้าเว็บเก็บไว้จะหายถาวร</p></div>
+      <p>หน้าเว็บที่ต้องเปิดได้ตลอด ควรเก็บไฟล์ HTML ต้นฉบับไว้ในเครื่อง แล้วเผยแพร่บน GitHub Pages ตามหัวข้อถัดไป</p>
+    </section>
+
+    <section id="ghpages">
+      <h2>เผยแพร่บน GitHub Pages</h2>
+      <p>GitHub Pages โฮสต์หน้าเว็บ static (HTML/CSS/JS) ได้ฟรี ที่อยู่จะเป็น <code>https://&lt;username&gt;.github.io/&lt;repo&gt;/</code> และไม่ขึ้นกับการจ่ายเงินให้ claude.ai</p>
+      <h3>วิธีที่ 1 · ผ่านหน้าเว็บ GitHub (ไม่ต้องใช้ git)</h3>
+      <ol class="steps">
+        <li>สมัครหรือ login บัญชีที่ <a href="https://github.com" target="_blank" rel="noopener">github.com</a></li>
+        <li>กด <strong>New repository</strong> ตั้งชื่อ เช่น <code>claude-code-guide</code> แล้วเลือก <strong>Public</strong> (บัญชีฟรีใช้ Pages ได้กับ repo สาธารณะเท่านั้น)</li>
+        <li>ใน repo กด <strong>Add file → Upload files</strong> แล้วอัปโหลดไฟล์ <code>index.html</code> จากนั้นกด <strong>Commit changes</strong></li>
+        <li>ไปที่ <strong>Settings → Pages</strong> ตั้ง Source เป็น <strong>Deploy from a branch</strong> แล้วเลือก Branch <code>main</code> และโฟลเดอร์ <code>/ (root)</code> จากนั้นกด <strong>Save</strong></li>
+        <li>รอ 1–2 นาที แล้วเปิด <code>https://&lt;username&gt;.github.io/claude-code-guide/</code></li>
+      </ol>
+      <h3>วิธีที่ 2 · ใช้ command line</h3>
+      <div class="code"><div class="lbl">PowerShell</div><button class="copy" type="button">คัดลอก</button><pre><code>winget install Git.Git GitHub.cli
+gh auth login
+cd "D:\oneDrive\OneDrive - NSTDA\Projects\etc\claude-code-guide"
+git init -b main
+git add index.html
+git commit -m "Add Claude Code guide"
+gh repo create claude-code-guide --public --source . --push
+gh api repos/{owner}/claude-code-guide/pages -X POST -f "source[branch]=main" -f "source[path]=/"</code></pre></div>
+      <h3>อัปเดตหน้าเว็บภายหลัง</h3>
+      <p>แก้ <code>index.html</code> แล้วอัปโหลดทับผ่านหน้าเว็บ หรือรัน <code>git commit -am "update"</code> ตามด้วย <code>git push</code> ประมาณหนึ่งนาทีหน้าเว็บจะอัปเดต</p>
+      <div class="note warn"><span class="t">ข้อควรรู้</span>
+        <ul>
+          <li>Repo และหน้าเว็บเป็น <strong>สาธารณะ</strong> ทุกคนเห็นได้ ห้ามใส่ API key รหัสผ่าน หรือข้อมูลส่วนตัว</li>
+          <li>รองรับแค่หน้าเว็บ static ความสามารถของ artifact เช่น ฐานข้อมูลร่วมหรือการถาม Claude จากหน้าเว็บ จะใช้ไม่ได้</li>
+          <li>ถ้าตั้งชื่อ repo เป็น <code>&lt;username&gt;.github.io</code> หน้าเว็บจะอยู่ที่ root เช่น <code>https://&lt;username&gt;.github.io/</code></li>
+        </ul>
+      </div>
+    </section>
+
+    <footer>คู่มือนี้สรุปจากการใช้งาน Claude Code Desktop บน Windows ณ ต.ค. 2026 · รายละเอียดเมนูอาจต่างกันตามเวอร์ชันของแอป</footer>
+  </main>
+</div>
+
+<script>
+(function () {
+  document.querySelectorAll('.code .copy').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var code = btn.parentElement.querySelector('pre code');
+      var text = code.innerText;
+      var done = function () { btn.textContent = 'คัดลอกแล้ว'; setTimeout(function () { btn.textContent = 'คัดลอก'; }, 1600); };
+      var fallback = function () {
+        var r = document.createRange(); r.selectNodeContents(code);
+        var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+        btn.textContent = 'กด Ctrl+C';
+      };
+      try {
+        navigator.clipboard.writeText(text).then(done, fallback);
+      } catch (e) { fallback(); }
+    });
+  });
+  var d = document.getElementById('toc-details');
+  if (d && window.matchMedia('(max-width: 860px)').matches) d.open = false;
+})();
+</script>
+
+</body>
+</html>
