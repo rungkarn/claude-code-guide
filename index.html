@@ -162,6 +162,10 @@ footer { margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--line);
         <li><a href="#migrate-new">ขั้นตอนบนเครื่องใหม่</a></li>
         <li><a href="#migrate-path">ถ้า path โปรเจกต์เปลี่ยน</a></li>
         <li><a href="#migrate-check">ตรวจสอบหลังย้าย</a></li>
+        <li class="grp">เปลี่ยนแผน</li>
+        <li><a href="#team">ย้ายจาก Pro ไป Team</a></li>
+        <li><a href="#team-share">แชร์ artifact ในแผน Team</a></li>
+        <li><a href="#team-steps">ขั้นตอนการย้าย</a></li>
       </ol>
     </details>
   </nav>
@@ -709,6 +713,66 @@ conda env list            # environment ครบ</code></pre></div>
           <li>เมื่อเครื่องใหม่ใช้งานได้แล้ว ให้ sign out Claude บนเครื่องเก่า รัน <code>gh auth logout</code> และลบโฟลเดอร์สำรองถ้าไม่ต้องการแล้ว</li>
         </ul>
       </div>
+    </section>
+
+    <div class="part">ส่วนที่ 7 · เปลี่ยนแผน</div>
+
+    <section id="team">
+      <h2>ย้ายจาก Pro ไป Team</h2>
+      <p>เมื่อเข้าร่วมองค์กรแผน Team มีสองทางให้เลือก ทางแรกคือ <strong>ย้าย</strong> ข้อมูลจากบัญชีส่วนตัวเข้าองค์กร ทางที่สองคือ <strong>แยก</strong> ใช้บัญชีส่วนตัวกับบัญชีองค์กรคู่กัน โดยติ๊ก "Keep your personal account separate" ตอนเข้าร่วม</p>
+      <div class="tbl"><table>
+        <thead><tr><th>ข้อมูล</th><th>ถ้าเลือกย้าย</th></tr></thead>
+        <tbody>
+          <tr><td>แชท และ artifact ในแชท</td><td><span class="pill ok">ย้ายตาม</span></td></tr>
+          <tr><td>Projects พร้อมคำสั่ง ไฟล์ และการตั้งค่า sync</td><td><span class="pill ok">ย้ายตาม</span></td></tr>
+          <tr><td>Memory ของแชทและ Projects</td><td><span class="pill ok">ย้ายตาม</span> ถ้าองค์กรเปิดฟีเจอร์ memory</td></tr>
+          <tr><td>การตั้งค่าส่วนตัวของ Claude Code</td><td><span class="pill ok">ย้ายตาม</span> ยกเว้นองค์กรกำหนดค่าไว้แล้ว</td></tr>
+          <tr><td>Artifact ที่เผยแพร่เป็นลิงก์สาธารณะ</td><td><span class="pill no">ไม่ย้าย</span></td></tr>
+          <tr><td>Skills ที่สร้างเอง</td><td><span class="pill no">ไม่ย้าย</span> ต้อง export ก่อน</td></tr>
+          <tr><td>Connectors</td><td><span class="pill no">ต้องเชื่อมใหม่</span> ส่วน connector ที่เพิ่มเองต้องเพิ่มใหม่</td></tr>
+          <tr><td>ลิงก์แชร์แชท และคำเชิญแชร์ที่ค้างอยู่</td><td><span class="pill no">ไม่ย้าย</span></td></tr>
+          <tr><td>Session ของ Cowork</td><td><span class="pill no">ไม่ย้าย</span></td></tr>
+          <tr><td>ไฟล์ Claude Code ในเครื่อง (<code>~\.claude</code>) และไฟล์โปรเจกต์</td><td><span class="pill ok">ไม่กระทบ</span> อยู่ในเครื่องอยู่แล้ว แค่ login ใหม่ด้วยบัญชี Team</td></tr>
+          <tr><td>หน้าเว็บบน GitHub Pages</td><td><span class="pill ok">ไม่กระทบ</span> อยู่นอก claude.ai</td></tr>
+        </tbody>
+      </table></div>
+      <div class="note warn"><span class="t">ย้อนกลับไม่ได้</span>
+        <ul>
+          <li>ข้อมูลที่ย้ายเข้าองค์กรแล้ว ย้ายกลับมาบัญชีส่วนตัวไม่ได้ และผู้ดูแลองค์กรเป็นผู้ควบคุมข้อมูลนั้น</li>
+          <li>การย้ายตรงจะยกเลิกแผน Pro และคืนเงินตามสัดส่วนวันที่เหลือ</li>
+          <li>ถ้าออกจากองค์กรภายหลัง ข้อมูลจะอยู่กับองค์กร ไม่ได้ตามตัวคุณไป</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="team-share">
+      <h2>แชร์ artifact ในแผน Team</h2>
+      <p>แผน Team ไม่มีการ <strong>เผยแพร่ (Publish)</strong> ซึ่งคือการเปิดลิงก์ให้ทุกคนบนอินเทอร์เน็ตเข้าดูได้ แต่ <strong>แชร์ภายในองค์กร</strong> ได้ ทั้งแชร์เฉพาะบางคนหรือแชร์ทั้งองค์กร การจำกัดแบบนี้ทำให้ข้อมูลงานไม่หลุดออกนอกองค์กรโดยไม่ตั้งใจ</p>
+      <div class="tbl"><table>
+        <thead><tr><th>แชร์กับใคร</th><th>Team</th><th>เงื่อนไข</th></tr></thead>
+        <tbody>
+          <tr><td>คนที่ระบุในองค์กร</td><td><span class="pill ok">ได้</span></td><td>เลือกจากปุ่ม Share</td></tr>
+          <tr><td>ทุกคนในองค์กร</td><td><span class="pill ok">ได้</span></td><td>ผู้ดูแลต้องเปิดฟีเจอร์ Artifacts ไว้</td></tr>
+          <tr><td>คนนอกองค์กร (Anyone with the link)</td><td>บางกรณี</td><td>Owner ต้องเปิด External sharing ใน Organization settings → Artifacts หรืออนุญาตเป็นรายชิ้น</td></tr>
+          <tr><td>Docs, artifact ที่ใช้ connector หรือที่ถาม Claude ได้</td><td><span class="pill no">นอกองค์กรไม่ได้</span></td><td>แม้เปิด External sharing แล้วก็ตาม</td></tr>
+        </tbody>
+      </table></div>
+      <p>ถ้าต้องการหน้าเว็บที่คนนอกองค์กรเปิดได้เสมอ เช่น คู่มือนี้ ให้เก็บไว้บน GitHub Pages คู่กัน</p>
+    </section>
+
+    <section id="team-steps">
+      <h2>ขั้นตอนการย้าย</h2>
+      <ol class="steps">
+        <li><strong>Export ข้อมูลเก็บไว้ก่อน</strong> ไปที่ Settings → Privacy → Export data ระบบจะส่งลิงก์ดาวน์โหลดทางอีเมล</li>
+        <li><strong>Export skills ที่สร้างเอง</strong> เพราะไม่ย้ายตามไปให้ ส่วน skill ของ Claude Code ใน <code>~\.claude\skills\</code> อยู่ในเครื่องอยู่แล้ว</li>
+        <li><strong>จดรายการ connector ที่ใช้อยู่</strong> ไว้เชื่อมใหม่ในบัญชีองค์กร</li>
+        <li><strong>คัดลอกไฟล์ HTML ของ artifact ที่เผยแพร่ไว้</strong> เก็บไว้ในเครื่อง หรือย้ายขึ้น GitHub Pages ก่อน เพราะลิงก์สาธารณะจะไม่ย้ายตาม</li>
+        <li><strong>เข้าร่วมองค์กร Team</strong> จากอีเมลเชิญ แล้วเลือกจะย้ายหรือแยกบัญชี</li>
+        <li><strong>ถ้าเลือกย้าย</strong> ให้สลับไปบัญชีองค์กร แล้วไปที่ Settings → Account → Close your personal account</li>
+        <li><strong>Login Claude Code ใหม่</strong> รัน <code>claude</code> แล้วพิมพ์ <code>/login</code> เลือกบัญชีองค์กร และ sign out แล้ว sign in ใหม่ใน Desktop app</li>
+        <li><strong>ถ้าค้นหาแชทเก่าไม่เจอ</strong> รอให้ระบบจัดทำดัชนีใหม่สักพัก หรือ sign out แล้ว sign in ใหม่</li>
+      </ol>
+      <p>ข้อมูลอ้างอิง: <a href="https://support.claude.com/en/articles/9267400-move-your-personal-claude-account-to-a-team-or-enterprise-organization" target="_blank" rel="noopener">Move your personal Claude account to a Team or Enterprise organization</a> · <a href="https://support.claude.com/en/articles/9547008-share-artifacts" target="_blank" rel="noopener">Share artifacts</a></p>
     </section>
 
     <footer>คู่มือนี้สรุปจากการใช้งาน Claude Code Desktop บน Windows ณ ต.ค. 2026 · รายละเอียดเมนูอาจต่างกันตามเวอร์ชันของแอป</footer>
