@@ -19,7 +19,7 @@ if (-not $SkipInstall) {
         "Git.Git",                    # required by Claude Code on Windows (Git Bash)
         "GitHub.cli",                 # gh: PRs, GitHub Pages
         "Microsoft.VisualStudioCode", # editor
-        "Anaconda.Anaconda3",         # Python + conda envs
+        "CondaForge.Miniforge3",      # Python + conda/mamba envs (conda-forge)
         "OpenJS.NodeJS.LTS",          # npx, used by many MCP servers
         "Anthropic.Claude"            # Claude desktop app
     )
@@ -85,16 +85,28 @@ if ((Test-Path $ve) -and (Get-Command code -ErrorAction SilentlyContinue)) {
     Write-Host "[ok] VS Code extensions"
 }
 
-# 6. Conda environments
+# 6. Conda environments (Miniforge)
 $conda = (Get-Command conda -ErrorAction SilentlyContinue).Source
-if (-not $conda -and (Test-Path "C:\ProgramData\anaconda3\Scripts\conda.exe")) { $conda = "C:\ProgramData\anaconda3\Scripts\conda.exe" }
-if (-not $conda -and (Test-Path "$env:USERPROFILE\anaconda3\Scripts\conda.exe")) { $conda = "$env:USERPROFILE\anaconda3\Scripts\conda.exe" }
+foreach ($p in "$env:USERPROFILE\miniforge3", "$env:LOCALAPPDATA\miniforge3", "C:\ProgramData\miniforge3") {
+    if (-not $conda -and (Test-Path "$p\Scripts\conda.exe")) { $conda = "$p\Scripts\conda.exe" }
+}
+$rc = Join-Path $Backup "condarc"
+if (Test-Path $rc) { Copy-Item $rc (Join-Path $env:USERPROFILE ".condarc") -Force; Write-Host "[ok] restored .condarc" }
 $envDir = Join-Path $Backup "conda-envs"
-if ($conda -and (Test-Path $envDir)) {
-    Get-ChildItem $envDir -Filter *.yml | Where-Object { $_.BaseName -ne "base" } | ForEach-Object {
-        Write-Host "Creating conda env $($_.BaseName) ..."
-        & $conda env create -n $_.BaseName -f $_.FullName
+if ($conda) {
+    & $conda init powershell | Out-Null   # lets "conda activate" work in new PowerShell windows
+    $mamba = Join-Path (Split-Path $conda -Parent) "mamba.exe"
+    $tool = $conda
+    if (Test-Path $mamba) { $tool = $mamba }   # mamba solves much faster
+    if (Test-Path $envDir) {
+        Get-ChildItem $envDir -Filter *.yml | Where-Object { $_.BaseName -notlike "base*" } | ForEach-Object {
+            Write-Host "Creating conda env $($_.BaseName) ..."
+            & $tool env create -n $_.BaseName -f $_.FullName
+            if ($LASTEXITCODE -ne 0) { Write-Warning "Could not create $($_.BaseName); fix its .yml and run: mamba env create -n $($_.BaseName) -f $($_.FullName)" }
+        }
     }
+} else {
+    Write-Warning "conda not found. Open a new PowerShell window and run this script again with -SkipInstall."
 }
 
 Write-Host ""

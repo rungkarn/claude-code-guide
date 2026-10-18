@@ -604,7 +604,7 @@ gh api repos/{owner}/claude-code-guide/pages -X POST -f "source[branch]=main" -f
           <tr><td>Claude Code CLI</td><td>คำสั่ง <code>claude</code> ใน terminal</td><td>ติดตั้งด้วย <code>install.ps1</code></td><td>แนะนำ</td></tr>
           <tr><td>Git for Windows</td><td>Claude Code บน Windows ใช้ Git Bash และใช้กับ git ทั่วไป</td><td><code>Git.Git</code></td><td>จำเป็น</td></tr>
           <tr><td>GitHub CLI</td><td>เปิด PR, สร้าง repo, GitHub Pages</td><td><code>GitHub.cli</code></td><td>ถ้าใช้ GitHub</td></tr>
-          <tr><td>Anaconda</td><td>Python และ conda environment</td><td><code>Anaconda.Anaconda3</code></td><td>สำหรับงาน Python</td></tr>
+          <tr><td>Miniforge</td><td>Python, conda และ mamba จาก conda-forge</td><td><code>CondaForge.Miniforge3</code></td><td>สำหรับงาน Python</td></tr>
           <tr><td>Node.js LTS</td><td>คำสั่ง <code>npx</code> ที่ MCP server หลายตัวใช้</td><td><code>OpenJS.NodeJS.LTS</code></td><td>ถ้าใช้ MCP</td></tr>
           <tr><td>VS Code</td><td>แก้โค้ด และใช้ extension ของ Claude Code</td><td><code>Microsoft.VisualStudioCode</code></td><td>แนะนำ</td></tr>
           <tr><td>OneDrive</td><td>sync ไฟล์โปรเจกต์และไฟล์สำรอง</td><td>มากับ Windows</td><td>จำเป็น</td></tr>
@@ -613,10 +613,18 @@ gh api repos/{owner}/claude-code-guide/pages -X POST -f "source[branch]=main" -f
       <div class="code"><div class="lbl">ติดตั้งเองทีละตัว (ถ้าไม่ใช้สคริปต์)</div><button class="copy" type="button">คัดลอก</button><pre><code>winget install --id Anthropic.Claude -e
 winget install --id Git.Git -e
 winget install --id GitHub.cli -e
-winget install --id Anaconda.Anaconda3 -e
+winget install --id CondaForge.Miniforge3 -e
 winget install --id OpenJS.NodeJS.LTS -e
 winget install --id Microsoft.VisualStudioCode -e
 irm https://claude.ai/install.ps1 | iex</code></pre></div>
+      <div class="note"><span class="t">Miniforge</span>
+        <ul>
+          <li>Miniforge ใช้ channel <code>conda-forge</code> เป็นค่าเริ่มต้น และมี <code>mamba</code> ที่ติดตั้งแพ็กเกจได้เร็วกว่า <code>conda</code> มาก สคริปต์จะใช้ <code>mamba</code> สร้าง environment ให้</li>
+          <li>รุ่น <code>CondaForge.Miniforge3</code> ใช้ Python ปกติ (CPython) ถ้าเครื่องเก่าเป็นรุ่น <strong>Miniforge-pypy3</strong> ไม่จำเป็นต้องติดตั้งรุ่น PyPy อีก เพราะ environment แต่ละตัวระบุเวอร์ชัน Python ของตัวเองไว้ในไฟล์ <code>.yml</code> อยู่แล้ว</li>
+          <li>conda บน Windows มักไม่อยู่ใน PATH สคริปต์สำรองจึงหา conda จากไฟล์ <code>~\.conda\environments.txt</code> และ export ทุก environment ที่ลงทะเบียนไว้ รวมถึงตัวที่สร้างจาก Anaconda รุ่นเก่า</li>
+          <li>Environment ที่ใช้ Python 2 หรือ 3.7 อาจสร้างใหม่ไม่ได้ เพราะ conda-forge เลิกทำแพ็กเกจรุ่นเก่าแล้ว สคริปต์จะแจ้งเตือนแล้วทำตัวถัดไปต่อ ตัวที่ใช้งานจริงควรอัปเกรดเวอร์ชัน Python ในไฟล์ <code>.yml</code> ก่อนสร้าง</li>
+        </ul>
+      </div>
       <p>ถ้าอยากได้โปรแกรมครบเหมือนเครื่องเก่าทุกตัว สคริปต์สำรองจะบันทึกรายการไว้ใน <code>winget-apps.json</code> ใช้คำสั่ง <code>winget import -i winget-apps.json</code> บนเครื่องใหม่ได้ แต่จะติดตั้งทุกอย่างรวมถึงโปรแกรมที่ไม่เกี่ยวกับ Claude ด้วย</p>
     </section>
 
@@ -639,7 +647,9 @@ claude_desktop_config.json   ← (ถ้ามี)
 winget-apps.json             ← รายการโปรแกรม
 git-config.txt               ← ชื่อและอีเมลของ git
 vscode-extensions.txt        ← extension ของ VS Code
+condarc                      ← ค่า channel ของ conda (.condarc)
 conda-envs\*.yml             ← conda environment แต่ละตัว
+conda-envs\base-*.yml        ← base ของแต่ละ install (เก็บไว้ดูเท่านั้น)
 source-info.txt              ← path เดิมของเครื่องเก่า</code></pre></div></li>
         <li><strong>รอ OneDrive sync เสร็จ</strong> ไอคอนเมฆที่ taskbar ต้องขึ้นว่า up to date ก่อนเลิกใช้เครื่องเก่า</li>
       </ol>
@@ -654,7 +664,7 @@ source-info.txt              ← path เดิมของเครื่อง
           <div class="code"><div class="lbl">PowerShell (Admin) · เครื่องใหม่</div><button class="copy" type="button">คัดลอก</button><pre><code>cd $env:USERPROFILE\Downloads
 irm https://raw.githubusercontent.com/rungkarn/claude-code-guide/main/scripts/setup-new-pc.ps1 -OutFile setup-new-pc.ps1
 powershell -ExecutionPolicy Bypass -File .\setup-new-pc.ps1 -Backup "D:\oneDrive\OneDrive - NSTDA\claude-migration"</code></pre></div>
-          แก้ path หลัง <code>-Backup</code> ให้ตรงกับตำแหน่งจริงของโฟลเดอร์สำรอง สคริปต์จะติดตั้งโปรแกรม คืนค่า <code>.claude</code> ตั้งชื่อและอีเมล git ติดตั้ง extension ของ VS Code และสร้าง conda environment</li>
+          แก้ path หลัง <code>-Backup</code> ให้ตรงกับตำแหน่งจริงของโฟลเดอร์สำรอง สคริปต์จะติดตั้งโปรแกรม คืนค่า <code>.claude</code> ตั้งชื่อและอีเมล git ติดตั้ง extension ของ VS Code คืนค่า <code>.condarc</code> รัน <code>conda init powershell</code> และสร้าง conda environment ทุกตัวด้วย <code>mamba</code></li>
         <li><strong>ปิดแล้วเปิด PowerShell ใหม่</strong> เพื่อให้รู้จักคำสั่งที่เพิ่งติดตั้ง แล้ว login ทีละตัว
           <div class="code"><div class="lbl">PowerShell</div><button class="copy" type="button">คัดลอก</button><pre><code>claude
 gh auth login</code></pre></div>

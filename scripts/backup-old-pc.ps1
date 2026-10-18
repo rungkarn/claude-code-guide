@@ -56,20 +56,30 @@ if (Get-Command code -ErrorAction SilentlyContinue) {
     Write-Host "[ok] vscode-extensions.txt"
 }
 
-# 7. Conda environments (Anaconda / Miniconda)
-$conda = (Get-Command conda -ErrorAction SilentlyContinue).Source
+# 7. Conda environments (Miniforge / Anaconda / Miniconda)
+#    conda is often not on PATH, so also look at the installs listed in ~/.conda/environments.txt
+$conda = $env:CONDA_EXE
+if (-not $conda) { $conda = (Get-Command conda -ErrorAction SilentlyContinue).Source }
 if (-not $conda) {
-    foreach ($p in "C:\ProgramData\anaconda3", "C:\ProgramData\miniconda3", "$env:USERPROFILE\anaconda3", "$env:USERPROFILE\miniconda3") {
-        if (Test-Path "$p\Scripts\conda.exe") { $conda = "$p\Scripts\conda.exe"; break }
+    $candidates = @("$env:USERPROFILE\miniforge3", "$env:LOCALAPPDATA\miniforge3", "C:\ProgramData\miniforge3")
+    $envList = Join-Path $env:USERPROFILE ".conda\environments.txt"
+    if (Test-Path $envList) { $candidates += Get-Content $envList }
+    foreach ($p in $candidates) {
+        if ($p -and (Test-Path "$p\Scripts\conda.exe")) { $conda = "$p\Scripts\conda.exe"; break }
     }
 }
 if ($conda) {
+    Write-Host "Using conda at $conda"
+    $condarc = Join-Path $env:USERPROFILE ".condarc"
+    if (Test-Path $condarc) { Copy-Item $condarc (Join-Path $Dest "condarc") -Force; Write-Host "[ok] .condarc" }
     $envDir = Join-Path $Dest "conda-envs"
     New-Item -ItemType Directory -Force -Path $envDir | Out-Null
     $envs = (& $conda env list --json | ConvertFrom-Json).envs
     foreach ($e in $envs) {
+        if (-not (Test-Path $e)) { continue }
         $name = Split-Path $e -Leaf
-        if ($e -match '\\(ana|mini)conda3$') { $name = "base" }
+        # The root of an install (it has no "envs" parent) is a base env: keep it for reference only
+        if ((Split-Path (Split-Path $e -Parent) -Leaf) -ne "envs") { $name = "base-$name" }
         & $conda env export -p $e --no-builds | Out-File (Join-Path $envDir "$name.yml") -Encoding utf8
         Write-Host "[ok] conda env $name"
     }
