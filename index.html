@@ -155,6 +155,13 @@ footer { margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--line);
         <li><a href="#desktop-cli">Desktop vs CLI</a></li>
         <li><a href="#artifacts">Artifacts และการจ่ายเงิน</a></li>
         <li><a href="#ghpages">เผยแพร่บน GitHub Pages</a></li>
+        <li class="grp">ย้ายเครื่อง</li>
+        <li><a href="#migrate">อะไรต้องย้าย อะไรไม่ต้อง</a></li>
+        <li><a href="#migrate-apps">โปรแกรมที่ต้องติดตั้ง</a></li>
+        <li><a href="#migrate-old">ขั้นตอนบนเครื่องเก่า</a></li>
+        <li><a href="#migrate-new">ขั้นตอนบนเครื่องใหม่</a></li>
+        <li><a href="#migrate-path">ถ้า path โปรเจกต์เปลี่ยน</a></li>
+        <li><a href="#migrate-check">ตรวจสอบหลังย้าย</a></li>
       </ol>
     </details>
   </nav>
@@ -163,7 +170,7 @@ footer { margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--line);
     <header class="hero">
       <div class="eyebrow">claude-code / คู่มือภาษาไทย</div>
       <h1>คู่มือ Claude Code</h1>
-      <p class="lede">ตั้งแต่การใช้งาน session ใน Desktop app การเปิด PR การตั้งค่าโปรเจกต์ ไปจนถึงการเลือกระหว่าง Desktop กับ command line พร้อมตัวอย่างจากโปรเจกต์วิเคราะห์หุ้นด้วย Python</p>
+      <p class="lede">ตั้งแต่การใช้งาน session ใน Desktop app การเปิด PR การตั้งค่าโปรเจกต์ การเลือกระหว่าง Desktop กับ command line ไปจนถึงการย้ายทุกอย่างไปคอมพิวเตอร์เครื่องใหม่ พร้อมตัวอย่างจากโปรเจกต์วิเคราะห์หุ้นด้วย Python</p>
       <div class="meta">ปรับปรุงล่าสุด 18 ต.ค. 2026 · เมนูในแอปอาจต่างกันเล็กน้อยตามเวอร์ชัน</div>
     </header>
 
@@ -558,6 +565,138 @@ gh api repos/{owner}/claude-code-guide/pages -X POST -f "source[branch]=main" -f
           <li>Repo และหน้าเว็บเป็น <strong>สาธารณะ</strong> ทุกคนเห็นได้ ห้ามใส่ API key รหัสผ่าน หรือข้อมูลส่วนตัว</li>
           <li>รองรับแค่หน้าเว็บ static ความสามารถของ artifact เช่น ฐานข้อมูลร่วมหรือการถาม Claude จากหน้าเว็บ จะใช้ไม่ได้</li>
           <li>ถ้าตั้งชื่อ repo เป็น <code>&lt;username&gt;.github.io</code> หน้าเว็บจะอยู่ที่ root เช่น <code>https://&lt;username&gt;.github.io/</code></li>
+        </ul>
+      </div>
+    </section>
+
+    <div class="part">ส่วนที่ 6 · ย้ายไปคอมพิวเตอร์ใหม่</div>
+
+    <section id="migrate">
+      <h2>อะไรต้องย้าย อะไรไม่ต้อง</h2>
+      <p>ข้อมูลของ Claude แบ่งเป็นสองกลุ่ม กลุ่มแรกอยู่บน cloud แค่ login บนเครื่องใหม่ก็กลับมาครบ กลุ่มที่สองอยู่ในเครื่อง ต้องสำรองแล้วนำไปวางบนเครื่องใหม่เอง</p>
+      <div class="tbl"><table>
+        <thead><tr><th>ข้อมูล</th><th>อยู่ที่ไหน</th><th>ต้องทำอะไร</th></tr></thead>
+        <tbody>
+          <tr><td>แชท, Projects, Artifacts บน claude.ai</td><td>Cloud</td><td><span class="pill ok">login</span> กลับมาครบ</td></tr>
+          <tr><td>Connectors (Calendar, Gmail ฯลฯ)</td><td>บัญชี claude.ai</td><td><span class="pill ok">login</span> บางตัวอาจต้องกดเชื่อมใหม่</td></tr>
+          <tr><td>Cloud routines (<code>/schedule</code>)</td><td>Cloud</td><td><span class="pill ok">login</span></td></tr>
+          <tr><td>ไฟล์โปรเจกต์ รวม <code>CLAUDE.md</code> และ <code>.claude\</code> ของโปรเจกต์</td><td>OneDrive</td><td><span class="pill ok">sync เอง</span></td></tr>
+          <tr><td>Repo บน GitHub</td><td>GitHub</td><td><code>git clone</code> หรือ sync ผ่าน OneDrive</td></tr>
+          <tr><td>ตั้งค่าส่วนตัว, skills, agents, plugins, memory, ประวัติ session</td><td><code>~\.claude\</code></td><td><span class="pill no">ต้องย้าย</span></td></tr>
+          <tr><td>MCP ระดับผู้ใช้ และค่าประจำโปรเจกต์</td><td><code>~\.claude.json</code></td><td><span class="pill no">ต้องย้าย</span></td></tr>
+          <tr><td>MCP ของแท็บ Chat ใน Desktop</td><td><code>%APPDATA%\Claude\claude_desktop_config.json</code></td><td><span class="pill no">ต้องย้าย</span> ถ้ามี</td></tr>
+          <tr><td>Login token ของ Claude และ gh</td><td>ในเครื่อง</td><td>ไม่ย้าย ให้ login ใหม่</td></tr>
+          <tr><td>โปรแกรมต่าง ๆ</td><td>ในเครื่อง</td><td>ติดตั้งใหม่</td></tr>
+          <tr><td>Python environment (conda / venv)</td><td>ในเครื่อง</td><td>สร้างใหม่จากไฟล์ <code>.yml</code> หรือ <code>requirements.txt</code></td></tr>
+          <tr><td>Scheduled task ในเครื่อง, สิทธิ์ computer use, เว็บที่อนุญาตใน browser</td><td>ในเครื่อง</td><td>ตั้งใหม่ (สั่ง Claude ได้)</td></tr>
+        </tbody>
+      </table></div>
+      <div class="note"><span class="t">สคริปต์ช่วยย้าย</span><p>คู่มือนี้มีสคริปต์ PowerShell สองไฟล์ใน repo คือ <a href="https://github.com/rungkarn/claude-code-guide/blob/main/scripts/backup-old-pc.ps1" target="_blank" rel="noopener">backup-old-pc.ps1</a> สำหรับเครื่องเก่า และ <a href="https://github.com/rungkarn/claude-code-guide/blob/main/scripts/setup-new-pc.ps1" target="_blank" rel="noopener">setup-new-pc.ps1</a> สำหรับเครื่องใหม่ เปิดอ่านก่อนรันได้ทุกบรรทัด</p></div>
+    </section>
+
+    <section id="migrate-apps">
+      <h2>โปรแกรมที่ต้องติดตั้ง</h2>
+      <p>ติดตั้งทั้งหมดผ่าน <code>winget</code> ซึ่งมากับ Windows 10/11 อยู่แล้ว สคริปต์ <code>setup-new-pc.ps1</code> ติดตั้งให้ครบทุกตัว</p>
+      <div class="tbl"><table>
+        <thead><tr><th>โปรแกรม</th><th>ใช้ทำอะไร</th><th>winget id</th><th>ความจำเป็น</th></tr></thead>
+        <tbody>
+          <tr><td>Claude (Desktop)</td><td>แอปหลัก แท็บ Chat และ Code</td><td><code>Anthropic.Claude</code></td><td>จำเป็น</td></tr>
+          <tr><td>Claude Code CLI</td><td>คำสั่ง <code>claude</code> ใน terminal</td><td>ติดตั้งด้วย <code>install.ps1</code></td><td>แนะนำ</td></tr>
+          <tr><td>Git for Windows</td><td>Claude Code บน Windows ใช้ Git Bash และใช้กับ git ทั่วไป</td><td><code>Git.Git</code></td><td>จำเป็น</td></tr>
+          <tr><td>GitHub CLI</td><td>เปิด PR, สร้าง repo, GitHub Pages</td><td><code>GitHub.cli</code></td><td>ถ้าใช้ GitHub</td></tr>
+          <tr><td>Anaconda</td><td>Python และ conda environment</td><td><code>Anaconda.Anaconda3</code></td><td>สำหรับงาน Python</td></tr>
+          <tr><td>Node.js LTS</td><td>คำสั่ง <code>npx</code> ที่ MCP server หลายตัวใช้</td><td><code>OpenJS.NodeJS.LTS</code></td><td>ถ้าใช้ MCP</td></tr>
+          <tr><td>VS Code</td><td>แก้โค้ด และใช้ extension ของ Claude Code</td><td><code>Microsoft.VisualStudioCode</code></td><td>แนะนำ</td></tr>
+          <tr><td>OneDrive</td><td>sync ไฟล์โปรเจกต์และไฟล์สำรอง</td><td>มากับ Windows</td><td>จำเป็น</td></tr>
+        </tbody>
+      </table></div>
+      <div class="code"><div class="lbl">ติดตั้งเองทีละตัว (ถ้าไม่ใช้สคริปต์)</div><button class="copy" type="button">คัดลอก</button><pre><code>winget install --id Anthropic.Claude -e
+winget install --id Git.Git -e
+winget install --id GitHub.cli -e
+winget install --id Anaconda.Anaconda3 -e
+winget install --id OpenJS.NodeJS.LTS -e
+winget install --id Microsoft.VisualStudioCode -e
+irm https://claude.ai/install.ps1 | iex</code></pre></div>
+      <p>ถ้าอยากได้โปรแกรมครบเหมือนเครื่องเก่าทุกตัว สคริปต์สำรองจะบันทึกรายการไว้ใน <code>winget-apps.json</code> ใช้คำสั่ง <code>winget import -i winget-apps.json</code> บนเครื่องใหม่ได้ แต่จะติดตั้งทุกอย่างรวมถึงโปรแกรมที่ไม่เกี่ยวกับ Claude ด้วย</p>
+    </section>
+
+    <section id="migrate-old">
+      <h2>ขั้นตอนบนเครื่องเก่า</h2>
+      <ol class="steps">
+        <li><strong>ปิดงานที่ค้าง</strong> รอให้ทุก session ใน Claude ทำงานเสร็จ แล้วปิดแอป Claude เพื่อให้ไฟล์ประวัติบันทึกครบ</li>
+        <li><strong>Commit และ push งานใน git repo</strong> ที่ยังไม่ได้ push เพื่อไม่ให้งานค้างอยู่แค่ในเครื่อง</li>
+        <li><strong>ถ้าโปรเจกต์ใช้ venv</strong> ให้บันทึกรายการแพ็กเกจไว้ในโฟลเดอร์โปรเจกต์ ส่วน conda สคริปต์จะ export ให้เอง
+          <div class="code"><div class="lbl">ในโฟลเดอร์โปรเจกต์</div><button class="copy" type="button">คัดลอก</button><pre><code>.venv\Scripts\pip freeze &gt; requirements.txt</code></pre></div></li>
+        <li><strong>ดาวน์โหลดและรันสคริปต์สำรอง</strong> ใน PowerShell
+          <div class="code"><div class="lbl">PowerShell · เครื่องเก่า</div><button class="copy" type="button">คัดลอก</button><pre><code>cd $env:USERPROFILE\Downloads
+irm https://raw.githubusercontent.com/rungkarn/claude-code-guide/main/scripts/backup-old-pc.ps1 -OutFile backup-old-pc.ps1
+powershell -ExecutionPolicy Bypass -File .\backup-old-pc.ps1</code></pre></div>
+          สคริปต์จะสร้างโฟลเดอร์ <code>claude-migration</code> ใน OneDrive ของคุณ ถ้าอยากเก็บที่อื่น เช่น USB ให้เติม <code>-Dest E:\claude-migration</code></li>
+        <li><strong>ตรวจสอบโฟลเดอร์สำรอง</strong> ควรมีไฟล์เหล่านี้
+          <div class="code"><div class="lbl">claude-migration\</div><pre><code>dot-claude\                  ← ~/.claude ทั้งหมด (ยกเว้น token และ cache)
+claude.json                  ← MCP และค่าประจำโปรเจกต์
+claude_desktop_config.json   ← (ถ้ามี)
+winget-apps.json             ← รายการโปรแกรม
+git-config.txt               ← ชื่อและอีเมลของ git
+vscode-extensions.txt        ← extension ของ VS Code
+conda-envs\*.yml             ← conda environment แต่ละตัว
+source-info.txt              ← path เดิมของเครื่องเก่า</code></pre></div></li>
+        <li><strong>รอ OneDrive sync เสร็จ</strong> ไอคอนเมฆที่ taskbar ต้องขึ้นว่า up to date ก่อนเลิกใช้เครื่องเก่า</li>
+      </ol>
+    </section>
+
+    <section id="migrate-new">
+      <h2>ขั้นตอนบนเครื่องใหม่</h2>
+      <ol class="steps">
+        <li><strong>Login OneDrive และตั้งตำแหน่งให้ตรงกับเครื่องเก่า</strong> ถ้าเครื่องเก่าเก็บไว้ที่ <code>D:\oneDrive</code> ให้เลือกตำแหน่งเดิมตอนตั้งค่า OneDrive (หน้า "Your OneDrive folder" → Change location) memory และประวัติ session จะผูกกับโปรเจกต์ได้ทันทีโดยไม่ต้องแก้อะไร</li>
+        <li><strong>รอให้โฟลเดอร์ <code>claude-migration</code> sync ลงเครื่อง</strong> คลิกขวาที่โฟลเดอร์แล้วเลือก "Always keep on this device" เพื่อให้ไฟล์ดาวน์โหลดลงมาจริง</li>
+        <li><strong>รันสคริปต์ติดตั้ง</strong> เปิด PowerShell แบบ Run as administrator เพื่อให้ winget ติดตั้งได้โดยไม่ติดสิทธิ์
+          <div class="code"><div class="lbl">PowerShell (Admin) · เครื่องใหม่</div><button class="copy" type="button">คัดลอก</button><pre><code>cd $env:USERPROFILE\Downloads
+irm https://raw.githubusercontent.com/rungkarn/claude-code-guide/main/scripts/setup-new-pc.ps1 -OutFile setup-new-pc.ps1
+powershell -ExecutionPolicy Bypass -File .\setup-new-pc.ps1 -Backup "D:\oneDrive\OneDrive - NSTDA\claude-migration"</code></pre></div>
+          แก้ path หลัง <code>-Backup</code> ให้ตรงกับตำแหน่งจริงของโฟลเดอร์สำรอง สคริปต์จะติดตั้งโปรแกรม คืนค่า <code>.claude</code> ตั้งชื่อและอีเมล git ติดตั้ง extension ของ VS Code และสร้าง conda environment</li>
+        <li><strong>ปิดแล้วเปิด PowerShell ใหม่</strong> เพื่อให้รู้จักคำสั่งที่เพิ่งติดตั้ง แล้ว login ทีละตัว
+          <div class="code"><div class="lbl">PowerShell</div><button class="copy" type="button">คัดลอก</button><pre><code>claude
+gh auth login</code></pre></div>
+          และเปิดแอป Claude Desktop เพื่อ sign in</li>
+        <li><strong>สร้าง venv ใหม่</strong> ในโปรเจกต์ที่ใช้ venv (ไม่ควรคัดลอกโฟลเดอร์ <code>.venv</code> ข้ามเครื่อง เพราะผูกกับ path ของ Python เครื่องเก่า)
+          <div class="code"><div class="lbl">ในโฟลเดอร์โปรเจกต์</div><button class="copy" type="button">คัดลอก</button><pre><code>python -m venv .venv
+.venv\Scripts\pip install -r requirements.txt</code></pre></div></li>
+        <li><strong>ตั้งค่าที่ผูกกับเครื่องใหม่</strong> ได้แก่ ให้สิทธิ์ computer use ใหม่เมื่อแอปถาม ติดตั้ง Claude in Chrome extension ถ้าใช้ ตรวจ Connectors ใน claude.ai และสั่ง Claude สร้าง scheduled task ในเครื่องที่เคยมีขึ้นใหม่</li>
+      </ol>
+    </section>
+
+    <section id="migrate-path">
+      <h2>ถ้า path โปรเจกต์เปลี่ยน</h2>
+      <p>Claude เก็บ memory และประวัติ session ไว้ใน <code>~\.claude\projects\</code> โดยตั้งชื่อโฟลเดอร์ตาม path ของโปรเจกต์ และแทนทุกตัวอักษรที่ไม่ใช่ a–z หรือ 0–9 ด้วย <code>-</code></p>
+      <div class="code"><div class="lbl">ตัวอย่างการตั้งชื่อ</div><pre><code>D:\oneDrive\OneDrive - NSTDA\Projects\stock
+→ ~\.claude\projects\D--oneDrive-OneDrive---NSTDA-Projects-stock\</code></pre></div>
+      <p>ถ้าเครื่องใหม่เก็บโปรเจกต์ไว้คนละที่ เช่น <code>C:\Users\me\OneDrive - NSTDA</code> Claude จะหา memory เดิมไม่เจอ ให้รันสคริปต์ติดตั้งพร้อม <code>-OldRoot</code> และ <code>-NewRoot</code> สคริปต์จะเปลี่ยนชื่อโฟลเดอร์ให้ตรงกับ path ใหม่</p>
+      <div class="code"><div class="lbl">PowerShell · เปลี่ยนชื่อโฟลเดอร์อย่างเดียว ไม่ติดตั้งโปรแกรมซ้ำ</div><button class="copy" type="button">คัดลอก</button><pre><code>powershell -ExecutionPolicy Bypass -File .\setup-new-pc.ps1 -SkipInstall `
+  -Backup "C:\Users\me\OneDrive - NSTDA\claude-migration" `
+  -OldRoot "D:\oneDrive\OneDrive - NSTDA" `
+  -NewRoot "C:\Users\me\OneDrive - NSTDA"</code></pre></div>
+      <p>Path ใน <code>settings.json</code> เช่น <code>defaultWorkingDirectory</code> และ path ที่เขียนไว้ใน <code>CLAUDE.md</code> ต้องแก้เองด้วย หรือสั่ง Claude ว่า "แก้ path เก่า D:\oneDrive ในไฟล์ตั้งค่าให้เป็น path ใหม่"</p>
+    </section>
+
+    <section id="migrate-check">
+      <h2>ตรวจสอบหลังย้าย</h2>
+      <div class="code"><div class="lbl">PowerShell</div><button class="copy" type="button">คัดลอก</button><pre><code>claude --version          # ติดตั้ง CLI แล้ว
+claude doctor             # ตรวจการติดตั้งและการตั้งค่า
+gh auth status            # login GitHub แล้ว
+git config --global user.email
+conda env list            # environment ครบ</code></pre></div>
+      <ul>
+        <li>เปิด session ใหม่ในโฟลเดอร์โปรเจกต์ แล้วถามว่า "จำอะไรเกี่ยวกับผมได้บ้าง" ถ้า Claude ตอบความชอบเดิมได้ แปลว่า memory ย้ายมาครบ</li>
+        <li>รัน <code>claude --resume</code> ในโฟลเดอร์โปรเจกต์ ควรเห็นรายการ session เก่า รายการใน sidebar ของ Desktop app อาจไม่แสดง session จากเครื่องเก่า แต่ประวัติยังอยู่และเรียกต่อได้ด้วยคำสั่งนี้</li>
+        <li>พิมพ์ <code>/</code> แล้วดูว่า skills และ slash command ที่สร้างไว้ยังอยู่ครบ</li>
+        <li>ลองสั่งงานที่ใช้ MCP หรือ connector ที่ใช้บ่อยหนึ่งครั้ง</li>
+      </ul>
+      <div class="note warn"><span class="t">ความปลอดภัย</span>
+        <ul>
+          <li>โฟลเดอร์ <code>claude-migration</code> มีประวัติแชทและ memory ทั้งหมด ให้เก็บใน OneDrive หรือ USB ส่วนตัวเท่านั้น <strong>ห้ามอัปโหลดขึ้น GitHub</strong></li>
+          <li>สคริปต์ไม่คัดลอกไฟล์ login (<code>.credentials.json</code>) จึงต้อง login ใหม่ทุกบริการ</li>
+          <li>เมื่อเครื่องใหม่ใช้งานได้แล้ว ให้ sign out Claude บนเครื่องเก่า รัน <code>gh auth logout</code> และลบโฟลเดอร์สำรองถ้าไม่ต้องการแล้ว</li>
         </ul>
       </div>
     </section>
