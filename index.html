@@ -141,6 +141,7 @@ footer { margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--line);
         <li class="grp">ตั้งค่าโปรเจกต์</li>
         <li><a href="#claudemd">CLAUDE.md</a></li>
         <li><a href="#permissions">Permissions</a></li>
+        <li><a href="#permission-levels">สิทธิ์ 3 ระดับ</a></li>
         <li><a href="#hooks">Hooks</a></li>
         <li><a href="#memory">Memory</a></li>
         <li class="grp">ต่อยอด</li>
@@ -359,6 +360,36 @@ stock-worktrees\
   }
 }</code></pre></div>
       <p>ความหมายคือ รัน python และ pytest ได้โดยไม่ต้องถาม แต่ห้ามอ่านไฟล์ API key และห้ามลบแบบ recursive ถ้าไม่อยากเขียนเอง ใช้ <code>/fewer-permission-prompts</code> ให้ Claude สแกนประวัติแล้วเสนอ allowlist ให้</p>
+
+      <h3 id="permission-levels">แบ่งสิทธิ์เป็น 3 ระดับ</h3>
+      <p>อนุญาตมากเกินไปเสี่ยงต่อข้อมูล อนุญาตน้อยเกินไป Claude ก็หยุดถามบ่อยจนทำงานต่อเองไม่ได้ แบ่งเป็น 3 ระดับตามความเสี่ยง และตั้งแต่ละระดับไว้คนละไฟล์</p>
+      <div class="tbl"><table>
+        <thead><tr><th>ระดับ</th><th>คำสั่ง</th><th>ตั้งไว้ที่ไหน</th></tr></thead>
+        <tbody>
+          <tr><td>1 · อนุญาตทั้งเครื่อง</td><td>คำสั่งอ่านอย่างเดียว: <code>git status/diff/log/show</code>, <code>git branch</code> แบบดูรายการ, <code>gh pr view/list/status</code>, <code>conda list</code>, <code>pip list/show</code></td><td><code>~\.claude\settings.json</code> ในส่วน <code>allow</code></td></tr>
+          <tr><td>2 · อนุญาตเฉพาะโปรเจกต์</td><td><code>python</code>, <code>pytest</code> ในโปรเจกต์ที่ไม่มีรหัสผ่าน ไม่เชื่อมบัญชีการเงิน และไม่ส่งข้อมูลออก เช่น งานวิจัย</td><td><code>&lt;project&gt;\.claude\settings.local.json</code> ของโปรเจกต์นั้น</td></tr>
+          <tr><td>3 · ต้องถามทุกครั้ง</td><td><code>python</code> ในโปรเจกต์ที่มีข้อมูลการเงินหรือส่งคำสั่งซื้อขาย, <code>git commit/push</code>, <code>gh pr create</code>, <code>pip/conda/mamba install</code></td><td>ไม่ต้องตั้ง แค่ไม่ใส่ไว้ในรายการ <code>allow</code></td></tr>
+          <tr><td>ห้าม (deny)</td><td>อ่าน <code>.env</code>, <code>secrets/</code>, ไฟล์ config ที่มีรหัส, <code>.credentials.json</code>, <code>.ssh/</code></td><td><code>~\.claude\settings.json</code> ในส่วน <code>deny</code></td></tr>
+        </tbody>
+      </table></div>
+      <div class="code"><div class="lbl">ระดับ 2 · &lt;project&gt;\.claude\settings.local.json</div><button class="copy" type="button">คัดลอก</button><pre><code>{
+  "permissions": {
+    "allow": [
+      "PowerShell(python *)",
+      "PowerShell(pytest *)",
+      "Bash(python *)",
+      "Bash(pytest *)"
+    ]
+  }
+}</code></pre></div>
+      <div class="note warn"><span class="t">ข้อควรรู้</span>
+        <ul>
+          <li>อนุญาต <code>python</code> เท่ากับอนุญาตให้รันโค้ดอะไรก็ได้ จึงไม่ควรตั้งทั้งเครื่อง</li>
+          <li>กฎ deny แบบ <code>Read(...)</code> กันไม่ให้ Claude เปิดอ่านไฟล์โดยตรง แต่ไม่กันสคริปต์ที่ Claude รัน ด่านที่กันได้จริงคือการไม่อนุญาต <code>python</code> ในโปรเจกต์ที่มีข้อมูลลับ</li>
+          <li>อย่าอนุญาต <code>git branch *</code> ทั้งหมด เพราะจะรวมคำสั่งลบ branch (<code>git branch -D</code>) ไปด้วย</li>
+          <li>ถ้าลืมว่าตั้งอะไรไว้ ถาม Claude ว่า "ตอนนี้อนุญาตคำสั่งอะไรไว้บ้าง" Claude จะเปิดไฟล์ตั้งค่าแล้วสรุปให้</li>
+        </ul>
+      </div>
     </section>
 
     <section id="hooks">
