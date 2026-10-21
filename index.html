@@ -164,6 +164,7 @@ footer { margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--line);
         <li><a href="#migrate-path">ถ้า path โปรเจกต์เปลี่ยน</a></li>
         <li><a href="#migrate-check">ตรวจสอบหลังย้าย</a></li>
         <li><a href="#remote-session">Session บนเครื่อง remote</a></li>
+        <li><a href="#handoff">HANDOFF.md คืออะไร</a></li>
         <li class="grp">ประหยัดเวลา</li>
         <li><a href="#timesave">ใช้ Claude ให้ประหยัดเวลาสูงสุด</a></li>
         <li><a href="#timesave-prompt">สั่งงานครั้งเดียวให้จบ</a></li>
@@ -777,6 +778,43 @@ conda env list            # environment ครบ</code></pre></div>
         <li><strong>สั่ง session ใหม่</strong>: "อ่าน HANDOFF.md แล้วทำงานต่อจากจุดที่ค้างไว้" แล้วจัด session เข้ากลุ่มเดิมใน sidebar</li>
       </ol>
       <div class="note"><span class="t">ดูว่ามี repo อะไรบ้าง</span><p>เปิด <code>https://github.com/&lt;username&gt;?tab=repositories</code> หรือรัน <code>gh repo list &lt;username&gt; --limit 100</code> หรือบอก Claude ว่า "ขอดู repo ใน GitHub"</p></div>
+
+      <h3 id="handoff">HANDOFF.md คืออะไร</h3>
+      <p>HANDOFF.md คือไฟล์บันทึก <strong>"ส่งต่องาน"</strong> เหมือนสมุดส่งเวรที่คนทำงานกะก่อนเขียนทิ้งไว้ให้คนกะถัดไปอ่านแล้วทำต่อได้ทันทีโดยไม่ต้องถามซ้ำ</p>
+      <ul>
+        <li><strong>ไม่ใช่ฟีเจอร์พิเศษของ Claude</strong> เป็นแค่ไฟล์ Markdown ที่ตั้งชื่อให้รู้กัน จะใช้ชื่ออื่นก็ได้ เช่น <code>NOTES.md</code></li>
+        <li><strong>ทำไมต้องมี:</strong> session ใหม่ไม่รู้ว่า session เดิมคุยอะไรไปบ้าง เพราะประวัติแชทไม่ย้ายตามไป ไฟล์นี้จึงเป็นตัวส่งต่อความรู้ อยู่ใน repo และย้ายตามไปทุกเครื่องผ่าน git</li>
+      </ul>
+      <div class="code"><div class="lbl">HANDOFF.md · ตัวอย่าง (เนื้อหาสมมติ)</div><button class="copy" type="button">คัดลอก</button><pre><code># HANDOFF — อัปเกรดโปรแกรมตรวจภาพ (21 ต.ค. 2569)
+
+## ทำอะไรไปแล้ว
+- ย้ายโปรเจกต์จาก .NET Framework 4.8 เป็น .NET 8
+- อัปเกรด OpenCV เป็น 4.x แก้ API ที่เปลี่ยนไปใน ImageProcessor.cs
+
+## ค้างอยู่ตรงไหน
+- โมดูลกล้อง (CameraService.cs) ยัง build ไม่ผ่าน: driver ตัวเก่าไม่รองรับ .NET 8
+- ยังไม่ได้ทดสอบกับกล้องจริง
+
+## ขั้นต่อไป
+1. หา driver กล้องรุ่นที่รองรับ .NET 8
+2. รัน unit test ใน tests/ ให้ผ่าน
+3. ทดสอบกับภาพตัวอย่างใน samples/
+
+## ตัดสินใจอะไรไปแล้ว (และเหตุผล)
+- เลือก OpenCvSharp แทน Emgu CV เพราะ license ใช้เชิงพาณิชย์ได้
+
+## ไฟล์ที่ไม่ได้อยู่ใน git (ต้องคัดลอกเอง)
+- models/model_v2.onnx (120 MB) อยู่ที่ D:\models บนเครื่อง remote
+- ไฟล์ตั้งค่ากล้อง camera_calib.json</code></pre></div>
+      <div class="tbl"><table>
+        <thead><tr><th></th><th>CLAUDE.md</th><th>HANDOFF.md</th></tr></thead>
+        <tbody>
+          <tr><td>เก็บอะไร</td><td>กฎและข้อมูลถาวรของโปรเจกต์ เช่น วิธี build, โครงสร้าง, ข้อห้าม</td><td>สถานะงาน <strong>ณ ตอนนี้</strong> เช่น ทำถึงไหน ค้างอะไร ทำอะไรต่อ</td></tr>
+          <tr><td>Claude อ่านเอง</td><td><span class="pill ok">ทุก session</span></td><td><span class="pill no">ต้องสั่ง</span> เช่น "อ่าน HANDOFF.md แล้วทำต่อ"</td></tr>
+          <tr><td>อายุ</td><td>ใช้ตลอด อัปเดตเมื่อกฎเปลี่ยน</td><td>ใช้ช่วงส่งต่อ พอทำต่อได้แล้วจะลบ หรือให้ Claude อัปเดตทุกครั้งที่หยุดงานก็ได้</td></tr>
+        </tbody>
+      </table></div>
+      <div class="note"><span class="t">เคล็ดลับ</span><p>ถ้าทำงานสลับเครื่องบ่อย เขียนไว้ใน <code>CLAUDE.md</code> ว่า <strong>"ก่อนจบงานทุกครั้ง ให้อัปเดต HANDOFF.md แล้ว commit"</strong> จะได้ไม่ต้องจำสั่งเอง และเครื่องไหนเปิดขึ้นมาก็ทำงานต่อได้ทันที</p></div>
     </section>
 
     <div class="part">ส่วนที่ 7 · ประหยัดเวลา</div>
