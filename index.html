@@ -163,6 +163,7 @@ footer { margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--line);
         <li><a href="#migrate-new">ขั้นตอนบนเครื่องใหม่</a></li>
         <li><a href="#migrate-path">ถ้า path โปรเจกต์เปลี่ยน</a></li>
         <li><a href="#migrate-check">ตรวจสอบหลังย้าย</a></li>
+        <li><a href="#remote-session">Session บนเครื่อง remote</a></li>
         <li class="grp">ประหยัดเวลา</li>
         <li><a href="#timesave">ใช้ Claude ให้ประหยัดเวลาสูงสุด</a></li>
         <li><a href="#timesave-prompt">สั่งงานครั้งเดียวให้จบ</a></li>
@@ -604,7 +605,8 @@ gh api repos/{owner}/claude-code-guide/pages -X POST -f "source[branch]=main" -f
         <ul>
           <li>Repo และหน้าเว็บเป็น <strong>สาธารณะ</strong> ทุกคนเห็นได้ ห้ามใส่ API key รหัสผ่าน หรือข้อมูลส่วนตัว</li>
           <li>รองรับแค่หน้าเว็บ static ความสามารถของ artifact เช่น ฐานข้อมูลร่วมหรือการถาม Claude จากหน้าเว็บ จะใช้ไม่ได้</li>
-          <li>ถ้าตั้งชื่อ repo เป็น <code>&lt;username&gt;.github.io</code> หน้าเว็บจะอยู่ที่ root เช่น <code>https://&lt;username&gt;.github.io/</code></li>
+          <li>ถ้าตั้งชื่อ repo เป็น <code>&lt;username&gt;.github.io</code> หน้าเว็บจะอยู่ที่ root เช่น <code>https://&lt;username&gt;.github.io/</code> ใช้ทำหน้ารวมลิงก์ไปยังเว็บอื่น ๆ ได้</li>
+          <li>เปิด <code>https://&lt;username&gt;.github.io/</code> แล้วขึ้น "There isn't a GitHub Pages site here" แปลว่ายังไม่มี repo ชื่อ <code>&lt;username&gt;.github.io</code> เว็บของ repo อื่นต้องเติมชื่อ repo ต่อท้าย เช่น <code>/claude-code-guide/</code></li>
         </ul>
       </div>
     </section>
@@ -749,6 +751,32 @@ conda env list            # environment ครบ</code></pre></div>
           <li>เมื่อเครื่องใหม่ใช้งานได้แล้ว ให้ sign out Claude บนเครื่องเก่า รัน <code>gh auth logout</code> และลบโฟลเดอร์สำรองถ้าไม่ต้องการแล้ว</li>
         </ul>
       </div>
+    </section>
+
+    <section id="remote-session">
+      <h2>Session บนเครื่อง remote</h2>
+      <p>Session ที่เปิดบนเครื่องอื่น (ผ่าน Remote Control หรือ SSH) <strong>เก็บประวัติแชทและไฟล์งานไว้ในเครื่องนั้น</strong> Desktop app บนเครื่องที่คุณใช้อยู่แค่แสดงผล พอปิดเครื่อง remote session จะหายจาก sidebar แต่ไม่ได้ถูกลบ เปิดเครื่องกลับมาก็เห็นอีก</p>
+      <div class="tbl"><table>
+        <thead><tr><th>ทางเลือก</th><th>เหมาะเมื่อ</th><th>ข้อจำกัด</th></tr></thead>
+        <tbody>
+          <tr><td><strong>A. ย้ายมาทำที่เครื่องหลัก</strong> (แนะนำ)</td><td>ใช้เครื่องนี้ทำงานเป็นหลัก</td><td>ประวัติแชทไม่ตามมาเต็ม ๆ ต้องให้ session เดิมเขียนสรุปส่งต่อไว้</td></tr>
+          <tr><td><strong>B. Move to cloud</strong></td><td>อยากให้ทำงานต่อได้แม้ปิดทุกเครื่อง</td><td>ต้องเป็น GitHub repo และ cloud เป็น Linux แก้โค้ดได้ แต่โปรแกรม Windows UI หรืองานที่ต้องต่อกล้องหรือฮาร์ดแวร์จะรันทดสอบไม่ได้</td></tr>
+          <tr><td><strong>C. เปิดเครื่อง remote ทิ้งไว้</strong></td><td>เครื่องนั้นต่อฮาร์ดแวร์ที่ต้องใช้ทดสอบ</td><td>เปลืองไฟ และต้องตั้งไม่ให้เครื่อง sleep</td></tr>
+        </tbody>
+      </table></div>
+      <h3>ขั้นตอนทาง A</h3>
+      <ol class="steps">
+        <li><strong>ตอนเครื่อง remote ยังเปิดอยู่</strong> พิมพ์ใน session เดิม:
+          <div class="code"><div class="lbl">สั่งใน session บนเครื่อง remote</div><button class="copy" type="button">คัดลอก</button><pre><code>สรุปงานที่ทำไปทั้งหมด สิ่งที่ค้าง และขั้นต่อไป เขียนลงไฟล์ HANDOFF.md
+อัปเดต CLAUDE.md แล้ว commit และ push ทุกอย่างขึ้น GitHub
+ทำรายการไฟล์ที่ไม่ได้อยู่ใน git (โมเดล ข้อมูล DLL) ไว้ใน HANDOFF.md ด้วย</code></pre></div></li>
+        <li><strong>เก็บประวัติแชทไว้</strong> (ถ้าต้องการ) ใช้ <strong>Export transcript</strong> จากเมนู "..." ของ session แล้วเก็บไฟล์ไว้ใน OneDrive</li>
+        <li><strong>คัดลอกไฟล์ที่ไม่ได้อยู่ใน git</strong> ตามรายการใน HANDOFF.md ผ่าน OneDrive หรือ USB</li>
+        <li><strong>ที่เครื่องหลัก</strong> clone repo มา แล้วเปิด session ใหม่ในโฟลเดอร์นั้น
+          <div class="code"><div class="lbl">PowerShell · เครื่องหลัก</div><button class="copy" type="button">คัดลอก</button><pre><code>gh repo clone &lt;owner&gt;/&lt;repo&gt; "D:\path\to\project"</code></pre></div></li>
+        <li><strong>สั่ง session ใหม่</strong>: "อ่าน HANDOFF.md แล้วทำงานต่อจากจุดที่ค้างไว้" แล้วจัด session เข้ากลุ่มเดิมใน sidebar</li>
+      </ol>
+      <div class="note"><span class="t">ดูว่ามี repo อะไรบ้าง</span><p>เปิด <code>https://github.com/&lt;username&gt;?tab=repositories</code> หรือรัน <code>gh repo list &lt;username&gt; --limit 100</code> หรือบอก Claude ว่า "ขอดู repo ใน GitHub"</p></div>
     </section>
 
     <div class="part">ส่วนที่ 7 · ประหยัดเวลา</div>
