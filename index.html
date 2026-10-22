@@ -163,6 +163,7 @@ footer { margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--line);
         <li><a href="#migrate-new">ขั้นตอนบนเครื่องใหม่</a></li>
         <li><a href="#migrate-path">ถ้า path โปรเจกต์เปลี่ยน</a></li>
         <li><a href="#migrate-check">ตรวจสอบหลังย้าย</a></li>
+        <li><a href="#remote-control">Remote Control: สั่งงานจากอีกเครื่อง</a></li>
         <li><a href="#remote-session">Session บนเครื่อง remote</a></li>
         <li><a href="#handoff">HANDOFF.md คืออะไร</a></li>
         <li class="grp">ประหยัดเวลา</li>
@@ -752,6 +753,66 @@ conda env list            # environment ครบ</code></pre></div>
           <li>เมื่อเครื่องใหม่ใช้งานได้แล้ว ให้ sign out Claude บนเครื่องเก่า รัน <code>gh auth logout</code> และลบโฟลเดอร์สำรองถ้าไม่ต้องการแล้ว</li>
         </ul>
       </div>
+    </section>
+
+    <section id="remote-control">
+      <h2>Remote Control: สั่งงานจากอีกเครื่อง</h2>
+      <p>Remote Control ทำให้คุณ <strong>ควบคุม session ที่รันอยู่บนเครื่อง A จากเครื่อง B</strong> ได้ เช่น จากมือถือ จาก browser หรือจาก Claude Desktop บนคอมอีกเครื่อง ตัว session ยังรันอยู่บนเครื่อง A ทั้งหมด ไฟล์ คำสั่ง และประวัติแชทอยู่ที่นั่น เครื่อง B แค่ส่งข้อความและดูผล</p>
+      <div class="code"><div class="lbl">ภาพรวม</div><pre class="flow"><code>เครื่อง A (ที่ทำงาน)
+  Claude รันอยู่ที่นี่: โค้ด ไฟล์ GPU กล้อง ประวัติแชท
+        ▲
+        │  เชื่อมผ่านบัญชี claude.ai เดียวกัน
+        ▼
+เครื่อง B (บ้าน / มือถือ)
+  claude.ai/code · แอป Claude บนมือถือ · Claude Desktop</code></pre></div>
+
+      <h3>ขั้นที่ 1 · เปิด Remote Control บนเครื่อง A</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>ใช้อะไรอยู่</th><th>วิธีเปิด</th></tr></thead>
+        <tbody>
+          <tr><td>Claude Desktop</td><td>เมนู <strong>"..."</strong> ของ session → <strong>Remote Control</strong> หรือพิมพ์ <code>/remote-control</code> (ย่อ <code>/rc</code>) ในช่องพิมพ์ ถ้าอยากให้ทุก session เปิดเองอัตโนมัติ ตั้งค่า <strong>Remote Control default</strong> ใน Settings ของแท็บ Code</td></tr>
+          <tr><td>Terminal (CLI)</td><td>เริ่ม session ด้วย <code>claude --remote-control</code> หรือพิมพ์ <code>/rc</code> ใน session ที่เปิดอยู่ ประวัติแชทที่คุยไปแล้วจะตามไปด้วย</td></tr>
+          <tr><td>เปิดรอไว้แบบ server</td><td>รัน <code>claude remote-control</code> ในโฟลเดอร์โปรเจกต์ แล้วเริ่มงานจากเครื่องอื่นได้เลย</td></tr>
+          <tr><td>VS Code</td><td>พิมพ์ <code>/remote-control</code> ใน panel ของ Claude Code</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>ขั้นที่ 2 · เชื่อมจากเครื่อง B</h3>
+      <ol class="steps">
+        <li><strong>Browser:</strong> เปิด <code>claude.ai/code</code> แล้ว login บัญชีเดียวกัน จะเห็น session จากเครื่อง A ในรายการ เลือกตามชื่อ session</li>
+        <li><strong>มือถือ:</strong> เปิดแอป Claude → แท็บ Code แล้วเลือก session หรือสแกน QR code (ใน terminal กด spacebar เพื่อแสดง QR)</li>
+        <li><strong>Claude Desktop บนคอมอีกเครื่อง:</strong> login บัญชีเดียวกัน แล้ว session จากเครื่อง A จะขึ้นใน sidebar</li>
+        <li>พิมพ์สั่งงานได้เหมือนนั่งอยู่หน้าเครื่อง A ผลการทำงาน, diff และคำขออนุญาตจะแสดงที่เครื่อง B</li>
+      </ol>
+
+      <h3>เงื่อนไขและข้อจำกัด</h3>
+      <ul>
+        <li><strong>เครื่อง A ต้องเปิดอยู่</strong> และ Claude ต้องรันอยู่ ถ้าเครื่อง A sleep จะต่อใหม่เองเมื่อตื่น แต่ถ้า <strong>ปิดเครื่อง session จะหายจากเครื่อง B</strong> (ไม่ได้ถูกลบ เปิดเครื่อง A กลับมาก็เห็นอีก) ตั้ง <strong>keep awake</strong> ใน Settings ของ Desktop ไว้กันเครื่อง sleep ได้</li>
+        <li>ต้องใช้ <strong>บัญชี claude.ai</strong> ใช้กับ API key ของ Console หรือผู้ให้บริการอื่น เช่น Bedrock ไม่ได้</li>
+        <li>บนมือถือใช้คำสั่งที่ต้องทำใน terminal ไม่ได้ เช่น <code>/plugin</code>, <code>/resume</code> และเลือกโหมด Bypass permissions ไม่ได้</li>
+        <li>คำสั่งบางตัว เช่น <code>--continue</code> ในโหมด server ต้องใช้ Claude Code เวอร์ชัน 2.1.200 ขึ้นไป</li>
+      </ul>
+
+      <h3>เลือกแบบไหนดี</h3>
+      <div class="tbl"><table>
+        <thead><tr><th></th><th>Remote Control</th><th>Cloud session</th><th>SSH</th></tr></thead>
+        <tbody>
+          <tr><td>งานรันที่ไหน</td><td>เครื่องของคุณ (A)</td><td>เครื่องของ Anthropic</td><td>server ที่คุณ SSH เข้าไป</td></tr>
+          <tr><td>ปิดเครื่องแล้วงานยังเดิน</td><td><span class="pill no">ไม่</span></td><td><span class="pill ok">ใช่</span></td><td>ขึ้นกับ server</td></tr>
+          <tr><td>ใช้ไฟล์ GPU หรือฮาร์ดแวร์ในเครื่องได้</td><td><span class="pill ok">ได้</span></td><td><span class="pill no">ไม่ได้</span></td><td>ใช้ของ server</td></tr>
+          <tr><td>ต้องมี GitHub repo</td><td>ไม่ต้อง</td><td>ต้อง</td><td>ไม่ต้อง</td></tr>
+          <tr><td>เหมาะกับ</td><td>สั่งงานเครื่องที่ทำงานจากบ้านหรือมือถือ</td><td>งานยาวที่ไม่อยากเปิดเครื่องทิ้งไว้</td><td>งานบน server เช่น LANTA</td></tr>
+        </tbody>
+      </table></div>
+      <p>ถ้าเริ่มงานบน cloud แล้วอยากดึงกลับมาทำในเครื่อง ใช้ <code>claude --teleport</code> หรือ <code>/teleport</code> จะได้ <strong>สำเนาแยก</strong> งานใหม่ในเครื่องจะไม่ไปแสดงใน cloud session เดิม ถ้าอยากสั่งต่อจากมือถือ ให้เปิด <code>/rc</code> ใน session ในเครื่องอีกครั้ง</p>
+      <div class="note warn"><span class="t">ความปลอดภัย</span>
+        <ul>
+          <li>ใครก็ตามที่เข้าบัญชี claude.ai ของคุณได้ จะสั่งงานเครื่อง A ได้ด้วย ควรเปิดยืนยันตัวตนหลายขั้นของบัญชีไว้</li>
+          <li>ปิด Remote Control เมื่อไม่ใช้ จากเมนู "..." ของ session</li>
+          <li>เวลาอนุมัติคำสั่งจากมือถือ ให้อ่านว่าเป็นคำสั่งอะไรก่อนกด เพราะคำสั่งจะรันจริงบนเครื่อง A</li>
+        </ul>
+      </div>
+      <p>ข้อมูลอ้างอิง: <a href="https://code.claude.com/docs/en/remote-control" target="_blank" rel="noopener">Remote Control</a> · <a href="https://code.claude.com/docs/en/mobile" target="_blank" rel="noopener">Claude Code on mobile</a> · <a href="https://code.claude.com/docs/en/claude-code-on-the-web" target="_blank" rel="noopener">Claude Code in the cloud</a></p>
     </section>
 
     <section id="remote-session">
