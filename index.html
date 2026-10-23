@@ -165,6 +165,7 @@ footer { margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--line);
         <li><a href="#migrate-check">ตรวจสอบหลังย้าย</a></li>
         <li><a href="#remote-control">Remote Control: สั่งงานจากอีกเครื่อง</a></li>
         <li><a href="#remote-control-cli">Remote Control ผ่าน CLI ทีละขั้น</a></li>
+        <li><a href="#multi-session">หลาย session บนเครื่อง remote</a></li>
         <li><a href="#remote-session">Session บนเครื่อง remote</a></li>
         <li><a href="#handoff">HANDOFF.md คืออะไร</a></li>
         <li class="grp">ประหยัดเวลา</li>
@@ -870,6 +871,122 @@ claude --continue</code></pre></div>
         </ul>
       </div>
       <p>ข้อมูลอ้างอิง: <a href="https://code.claude.com/docs/en/remote-control" target="_blank" rel="noopener">Remote Control</a> · <a href="https://code.claude.com/docs/en/mobile" target="_blank" rel="noopener">Claude Code on mobile</a> · <a href="https://code.claude.com/docs/en/claude-code-on-the-web" target="_blank" rel="noopener">Claude Code in the cloud</a></p>
+    </section>
+
+    <section id="multi-session">
+      <h2>ทำงานหลาย session บนเครื่อง remote</h2>
+      <p>อยากให้ Claude ทำ 2 งานพร้อมกันบนเครื่อง A ต้องมี <strong>Claude 2 ตัว รันใน 2 โฟลเดอร์</strong> และถ้าเป็น repo เดียวกัน ต้อง <strong>แยก branch ด้วย git worktree</strong></p>
+
+      <h3>หลักการ: 2 session = 2 worktree = 2 branch</h3>
+      <p>1 โฟลเดอร์มีไฟล์ได้ชุดเดียว คือไฟล์ของ branch ที่เลือกอยู่ ถ้าสลับ branch (<code>git switch</code>) ไฟล์ทั้งโฟลเดอร์จะเปลี่ยนตาม session ที่ใช้โฟลเดอร์เดียวกันจะแก้ไฟล์ผิด branch ทันที</p>
+      <div class="code"><div class="lbl">โฟลเดอร์เดียว 2 session (ห้ามทำ)</div><pre class="flow"><code>D:\work\myapp   (ไฟล์ชุดเดียว)
+   ├─ session 1 ← คิดว่ากำลังแก้ upgrade/opencv4
+   └─ session 2 ← สั่ง git switch feature/settings
+                  → ไฟล์ทั้งโฟลเดอร์เปลี่ยน → งานปนกัน build พัง</code></pre></div>
+      <div class="code"><div class="lbl">ใช้ worktree (ถูกต้อง)</div><pre class="flow"><code>D:\work\myapp            ← branch upgrade/opencv4   → session 1
+D:\work\myapp-settings   ← branch feature/settings  → session 2</code></pre></div>
+      <div class="tbl"><table>
+        <thead><tr><th>สถานการณ์</th><th>ใช้อะไร</th></tr></thead>
+        <tbody>
+          <tr><td>ทำทีละงาน ไม่พร้อมกัน</td><td>โฟลเดอร์เดียว สลับด้วย <code>git switch &lt;branch&gt;</code> (commit ก่อนสลับ)</td></tr>
+          <tr><td>2 session พร้อมกัน คนละโปรเจกต์</td><td>แค่คนละโฟลเดอร์ ไม่ต้องใช้ worktree</td></tr>
+          <tr><td>2 session พร้อมกัน repo เดียวกัน</td><td>✅ worktree + branch ใหม่</td></tr>
+          <tr><td>2 session พร้อมกัน branch เดียวกัน</td><td>❌ ห้าม งานจะทับกัน</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>ตั้งชื่อ worktree และ branch</h3>
+      <ul>
+        <li><strong>โฟลเดอร์:</strong> <code>&lt;โปรเจกต์&gt;-&lt;งาน&gt;</code> เช่น <code>myapp-settings</code> ดูที่เครื่อง B ก็รู้ว่าเป็นงานอะไร</li>
+        <li><strong>branch:</strong> คำนำหน้าบอกประเภทงาน</li>
+      </ul>
+      <div class="tbl"><table>
+        <thead><tr><th>งาน</th><th>ชื่อ branch</th></tr></thead>
+        <tbody>
+          <tr><td>เพิ่มความสามารถใหม่</td><td><code>feature/settings</code></td></tr>
+          <tr><td>แก้บั๊ก</td><td><code>fix/settings</code></td></tr>
+          <tr><td>จัดโครงสร้างใหม่ ผลลัพธ์เท่าเดิม</td><td><code>refactor/settings</code></td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>ขั้นตอนบนเครื่อง A</h3>
+      <ol class="steps">
+        <li><strong>เข้าโฟลเดอร์ repo เดิม แล้วเช็กสถานะ</strong> ต้องขึ้น <code>working tree clean</code> ถ้ามีงานค้างให้ commit ก่อน
+          <div class="code"><div class="lbl">Terminal</div><button class="copy" type="button">คัดลอก</button><pre><code>cd D:\work\myapp
+git status</code></pre></div></li>
+        <li><strong>สร้าง worktree พร้อม branch ใหม่</strong> เลือกต้นทางให้ถูก
+          <div class="code"><div class="lbl">ต่อยอดจาก branch ปัจจุบัน</div><button class="copy" type="button">คัดลอก</button><pre><code>git worktree add ..\myapp-settings -b feature/settings</code></pre></div>
+          <div class="code"><div class="lbl">งานแยกอิสระ เริ่มจาก main</div><button class="copy" type="button">คัดลอก</button><pre><code>git worktree add ..\myapp-settings -b feature/settings main</code></pre></div>
+          ไม่แน่ใจ ให้เลือกต่อยอดจาก branch ปัจจุบัน บน Mac/Linux ใช้ <code>/</code> แทน <code>\</code></li>
+        <li><strong>เตรียมไฟล์ที่ไม่อยู่ใน git</strong> คำสั่งในข้อ 2 ใส่ไฟล์ทุกไฟล์ที่อยู่ใน git ให้แล้ว <strong>ไม่ต้อง copy ทั้งโฟลเดอร์</strong> (copy ด้วย Explorer จะได้ repo แยกขาดกัน) ดูว่าขาดอะไรด้วย:
+          <div class="code"><div class="lbl">ในโฟลเดอร์เดิม</div><button class="copy" type="button">คัดลอก</button><pre><code>git status --ignored</code></pre></div>
+          <div class="tbl"><table>
+            <thead><tr><th>ไฟล์ใน "Ignored files"</th><th>ทำอย่างไร</th></tr></thead>
+            <tbody>
+              <tr><td><code>bin\</code>, <code>obj\</code></td><td>ไม่ต้อง copy build ใหม่ได้</td></tr>
+              <tr><td>แพ็กเกจ เช่น NuGet, <code>.venv</code></td><td>ไม่ต้อง copy ให้ restore หรือ install ใหม่</td></tr>
+              <tr><td>โมเดล, ข้อมูล, ไฟล์ตั้งค่า</td><td>copy มา หรือถ้าไฟล์ใหญ่ ทำลิงก์ใช้ร่วมกัน</td></tr>
+            </tbody>
+          </table></div>
+          <div class="code"><div class="lbl">ทำลิงก์โฟลเดอร์ข้อมูลใหญ่ (Windows cmd)</div><button class="copy" type="button">คัดลอก</button><pre><code>mklink /J D:\work\myapp-settings\models D:\work\myapp\models</code></pre></div></li>
+        <li><strong>เปิด session ที่สอง</strong> ใน terminal หน้าต่างใหม่ (หน้าต่างของ session แรกเปิดไว้ตามเดิม)
+          <div class="code"><div class="lbl">Terminal หน้าต่างใหม่</div><button class="copy" type="button">คัดลอก</button><pre><code>cd D:\work\myapp-settings
+claude --remote-control</code></pre></div>
+          สั่งเรื่องแรกว่า <em>"เทียบกับโฟลเดอร์ D:\work\myapp ว่าขาดไฟล์อะไรที่ต้องใช้ build แล้วเตรียมให้ build ผ่าน"</em></li>
+        <li><strong>งานเสร็จ รวมกลับและลบ worktree</strong> ให้ session สอง commit และ push แล้วเปิด PR หรือ merge เอง จากนั้นลบโฟลเดอร์ (branch และ commit ยังอยู่ครบ)
+          <div class="code"><div class="lbl">Terminal</div><button class="copy" type="button">คัดลอก</button><pre><code>cd D:\work\myapp
+git merge feature/settings
+git worktree remove ..\myapp-settings</code></pre></div></li>
+      </ol>
+
+      <h3>คำสั่งเช็ก branch</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>คำสั่ง</th><th>บอกอะไร</th></tr></thead>
+        <tbody>
+          <tr><td><code>git branch --show-current</code></td><td>ตอนนี้อยู่ branch ไหน</td></tr>
+          <tr><td><code>git status</code></td><td>branch ปัจจุบัน และไฟล์ที่ยังไม่ commit</td></tr>
+          <tr><td><code>git branch</code></td><td>branch ทั้งหมดในเครื่อง (<code>*</code> = ปัจจุบัน, <code>+</code> = เปิดอยู่ใน worktree อื่น)</td></tr>
+          <tr><td><code>git branch -a</code></td><td>รวม branch บน GitHub ด้วย</td></tr>
+          <tr><td><code>git worktree list</code></td><td>แต่ละโฟลเดอร์อยู่ branch ไหน</td></tr>
+        </tbody>
+      </table></div>
+      <p>หลักจำง่าย: branch ผูกกับโฟลเดอร์ <code>cd</code> ถูกโฟลเดอร์ ก็อยู่ถูก branch</p>
+
+      <h3>เรื่อง build ใน worktree ใหม่</h3>
+      <ul>
+        <li>แต่ละโฟลเดอร์มี <code>bin\</code> และ <code>obj\</code> ของตัวเอง worktree ใหม่จึงต้อง restore ครั้งแรกครั้งเดียว ส่วนไลบรารีจริงอยู่ใน cache กลางของเครื่อง ไม่โหลดซ้ำ</li>
+        <li><strong>ไม่จำเป็นต้องติดตั้งเครื่องมือเพิ่ม</strong> ถ้าเดิม build ได้ด้วย Visual Studio หรือ Claude build ให้ได้อยู่แล้ว เครื่องมือเดิมใช้กับ worktree ใหม่ได้เลย สั่ง Claude ว่า "build ด้วยวิธีเดียวกับโฟลเดอร์เดิม"</li>
+        <li>ถ้าพิมพ์ <code>dotnet</code> แล้วขึ้น "not recognized" แปลว่า terminal นั้นไม่มี .NET SDK ใน PATH แต่ Claude อาจยังเรียกด้วย path เต็มหรือใช้ MSBuild ของ Visual Studio ได้</li>
+        <li><strong>บันทึกคำสั่ง build ไว้ใน <code>CLAUDE.md</code></strong> ทุก session ในทุก worktree จะรู้วิธี build ทันที</li>
+      </ul>
+
+      <h3>แก้ปัญหา: fork session แล้วขึ้น "Remote Control disconnected"</h3>
+      <p>Remote Control แบบปกติเป็น <strong>1 terminal ต่อ 1 session</strong> session ที่ fork จากเครื่อง B เป็นแค่สำเนาประวัติแชท ยังไม่มีโปรแกรม <code>claude</code> ตัวที่สองบนเครื่อง A มารับงาน จึงขึ้นว่า offline และสั่งอะไรก็ไม่ทำงาน</p>
+      <div class="tbl"><table>
+        <thead><tr><th>วิธีแก้ (ทำที่เครื่อง A)</th><th>คำสั่ง</th></tr></thead>
+        <tbody>
+          <tr><td><strong>1. เปิด session ใหม่เอง</strong> (แน่นอนที่สุด)</td><td>terminal หน้าต่างใหม่ → <code>cd</code> ไปโฟลเดอร์ (หรือ worktree) → <code>claude --remote-control</code></td></tr>
+          <tr><td><strong>2. เปิดประวัติของ session ที่ fork</strong></td><td><code>claude --resume</code> → เลือก session → <code>/rc</code> ถ้าไม่เจอในรายการ ใช้วิธี 1</td></tr>
+          <tr><td><strong>3. เปิดโหมด server รอไว้</strong></td><td><code>claude remote-control</code> แล้วเริ่ม session ใหม่จากเครื่อง B</td></tr>
+        </tbody>
+      </table></div>
+      <p>ถ้า session เดิมก็ offline ด้วย ให้เช็กว่าเครื่อง A เปิดอยู่ ไม่ sleep, หน้าต่าง terminal ยังเปิด, ต่อเน็ตได้ และ login บัญชีเดียวกัน</p>
+
+      <h3>บน Linux server: หลาย session ใน tmux</h3>
+      <div class="code"><div class="lbl">tmux</div><button class="copy" type="button">คัดลอก</button><pre><code>tmux new -s claude                 # หน้าต่างแรก
+cd ~/work/myapp && claude --remote-control
+# Ctrl+B แล้ว C = เปิดหน้าต่างใหม่
+cd ~/work/myapp-settings && claude --remote-control
+# Ctrl+B แล้ว 0 หรือ 1 = สลับหน้าต่าง · Ctrl+B แล้ว D = ออกโดยไม่ปิด
+tmux attach -t claude              # กลับเข้ามาดู</code></pre></div>
+      <div class="note warn"><span class="t">ข้อควรระวัง</span>
+        <ul>
+          <li>ห้ามลบโฟลเดอร์ worktree ด้วย Explorer ให้ใช้ <code>git worktree remove</code> ถ้าเผลอลบไปแล้วรัน <code>git worktree prune</code></li>
+          <li>ถ้า 2 งานแก้ไฟล์เดียวกัน ตอน merge อาจเกิด conflict ให้ Claude ช่วยแก้ได้</li>
+          <li>วางโฟลเดอร์งานไว้นอก OneDrive เช่น <code>D:\work</code> เพราะ OneDrive อาจ sync ไฟล์ทับกันระหว่างที่ git หรือ build ทำงาน</li>
+          <li>2 session ใช้ CPU, RAM และโควตามากขึ้น</li>
+        </ul>
+      </div>
     </section>
 
     <section id="remote-session">
