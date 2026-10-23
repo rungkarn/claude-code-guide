@@ -164,6 +164,7 @@ footer { margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--line);
         <li><a href="#migrate-path">ถ้า path โปรเจกต์เปลี่ยน</a></li>
         <li><a href="#migrate-check">ตรวจสอบหลังย้าย</a></li>
         <li><a href="#remote-control">Remote Control: สั่งงานจากอีกเครื่อง</a></li>
+        <li><a href="#remote-control-cli">Remote Control ผ่าน CLI ทีละขั้น</a></li>
         <li><a href="#remote-session">Session บนเครื่อง remote</a></li>
         <li><a href="#handoff">HANDOFF.md คืออะไร</a></li>
         <li class="grp">ประหยัดเวลา</li>
@@ -784,6 +785,62 @@ conda env list            # environment ครบ</code></pre></div>
         <li><strong>Claude Desktop บนคอมอีกเครื่อง:</strong> login บัญชีเดียวกัน แล้ว session จากเครื่อง A จะขึ้นใน sidebar</li>
         <li>พิมพ์สั่งงานได้เหมือนนั่งอยู่หน้าเครื่อง A ผลการทำงาน, diff และคำขออนุญาตจะแสดงที่เครื่อง B</li>
       </ol>
+
+      <h3 id="remote-control-cli">ฉบับละเอียด: เครื่อง A ใช้ command line (CLI)</h3>
+      <p><strong>CLI</strong> (Command Line Interface) คือการใช้ Claude Code ผ่านหน้าต่างพิมพ์คำสั่ง เช่น PowerShell บน Windows หรือ Terminal บน Mac/Linux โดยพิมพ์คำสั่ง <code>claude</code> ถ้าเครื่อง A ไม่มีหน้าจอแอป Desktop หรือเป็น server ที่ SSH เข้าไป ให้ใช้วิธีนี้ ทำตามลำดับ</p>
+
+      <ol class="steps">
+        <li><strong>ติดตั้งโปรแกรมบนเครื่อง A</strong> ต้องมี Git, GitHub CLI (สำหรับ repo ส่วนตัว) และ Claude Code CLI
+          <div class="code"><div class="lbl">Windows · PowerShell</div><button class="copy" type="button">คัดลอก</button><pre><code>winget install --id Git.Git -e
+winget install --id GitHub.cli -e
+irm https://claude.ai/install.ps1 | iex</code></pre></div>
+          <div class="code"><div class="lbl">Mac / Linux · Terminal</div><button class="copy" type="button">คัดลอก</button><pre><code>curl -fsSL https://claude.ai/install.sh | bash
+# Git และ gh: ติดตั้งผ่าน package manager ของเครื่อง เช่น brew install git gh หรือ sudo apt install git gh</code></pre></div>
+          ปิดหน้าต่างแล้วเปิดใหม่ จากนั้นเช็กว่าติดตั้งครบ
+          <div class="code"><div class="lbl">ตรวจสอบ</div><button class="copy" type="button">คัดลอก</button><pre><code>git --version
+gh --version
+claude --version</code></pre></div></li>
+
+        <li><strong>Login GitHub</strong> (ทำครั้งเดียว) จำเป็นถ้า repo เป็น Private
+          <div class="code"><div class="lbl">Terminal</div><button class="copy" type="button">คัดลอก</button><pre><code>gh auth login</code></pre></div>
+          เลือก GitHub.com → HTTPS → Login with a web browser แล้วกรอกรหัส 8 ตัวในเบราว์เซอร์ ถ้าเครื่อง A ไม่มีเบราว์เซอร์ เปิดลิงก์ที่ขึ้นบนมือถือหรือเครื่องอื่นได้</li>
+
+        <li><strong>ดึงโค้ดมาไว้ในเครื่อง A (clone)</strong> แล้วเข้าไปในโฟลเดอร์ (cd)
+          <div class="code"><div class="lbl">Windows · PowerShell</div><button class="copy" type="button">คัดลอก</button><pre><code>gh repo clone &lt;owner&gt;/&lt;repo&gt; D:\work\&lt;repo&gt;
+cd D:\work\&lt;repo&gt;</code></pre></div>
+          <div class="code"><div class="lbl">Mac / Linux</div><button class="copy" type="button">คัดลอก</button><pre><code>gh repo clone &lt;owner&gt;/&lt;repo&gt; ~/work/&lt;repo&gt;
+cd ~/work/&lt;repo&gt;</code></pre></div>
+          ถ้าเคย clone ไว้แล้ว ไม่ต้อง clone ซ้ำ แค่ <code>cd</code> เข้าไปแล้วรัน <code>git pull</code> ให้ได้โค้ดล่าสุด ถ้าเป็น repo สาธารณะ ใช้ <code>git clone https://github.com/&lt;owner&gt;/&lt;repo&gt;.git</code> แทนได้</li>
+
+        <li><strong>เตรียมโปรเจกต์ให้รันได้</strong> (ถ้ามี) เช่น <code>pip install -r requirements.txt</code>, <code>mamba env create -f environment.yml</code> หรือ <code>dotnet restore</code> และคัดลอกไฟล์ที่ไม่ได้อยู่ใน git เช่น โมเดลหรือข้อมูล ตามรายการใน HANDOFF.md</li>
+
+        <li><strong>เริ่ม Claude พร้อม Remote Control</strong> ต้องอยู่ในโฟลเดอร์โปรเจกต์เสมอ Claude จะทำงานกับโฟลเดอร์ที่คุณเปิด
+          <div class="code"><div class="lbl">Terminal · ในโฟลเดอร์โปรเจกต์</div><button class="copy" type="button">คัดลอก</button><pre><code>claude --remote-control</code></pre></div>
+          ครั้งแรกจะให้ login บัญชี claude.ai ให้ใช้ <strong>บัญชีเดียวกับเครื่อง B</strong> ถ้าเปิด session ไปแล้ว พิมพ์ <code>/rc</code> ก็ได้ผลเหมือนกัน หน้าจอจะแสดงลิงก์ของ session กด <strong>spacebar</strong> เพื่อแสดง QR code ไว้สแกนจากมือถือ</li>
+
+        <li><strong>เปิดค้างไว้ อย่าปิดหน้าต่าง</strong> ปิด terminal เมื่อไร session จะหยุด
+          <ul>
+            <li><strong>Windows:</strong> ตั้งไม่ให้เครื่อง sleep ตอนเสียบปลั๊ก ด้วยคำสั่ง <code>powercfg /change standby-timeout-ac 0</code> หรือตั้งใน Settings → System → Power</li>
+            <li><strong>Linux server ที่ SSH เข้าไป:</strong> รันใน <code>tmux</code> เพื่อให้ Claude ยังทำงานต่อแม้หลุดจาก SSH</li>
+          </ul>
+          <div class="code"><div class="lbl">Linux · ใช้ tmux</div><button class="copy" type="button">คัดลอก</button><pre><code>tmux new -s claude          # เปิดหน้าต่าง tmux ชื่อ claude
+cd ~/work/&lt;repo&gt;
+claude --remote-control
+# กด Ctrl+B แล้วกด D เพื่อออกโดยไม่ปิด Claude
+tmux attach -t claude       # กลับเข้ามาดูภายหลัง</code></pre></div></li>
+
+        <li><strong>สั่งงานจากเครื่อง B</strong> เปิด <code>claude.ai/code</code>, แอป Claude บนมือถือ หรือ Claude Desktop แล้วเลือก session ของเครื่อง A ถ้ามีหลาย session ให้ดูจากชื่อโฟลเดอร์</li>
+
+        <li><strong>จบงาน</strong> สั่งจากเครื่อง B ว่า "อัปเดต HANDOFF.md แล้ว commit และ push" จากนั้นที่เครื่อง A พิมพ์ <code>/exit</code> หรือกด <kbd>Ctrl</kbd>+<kbd>C</kbd> สองครั้งเพื่อปิด</li>
+
+        <li><strong>วันถัดไป ทำงานต่อ session เดิม</strong>
+          <div class="code"><div class="lbl">Terminal · ในโฟลเดอร์โปรเจกต์</div><button class="copy" type="button">คัดลอก</button><pre><code>cd D:\work\&lt;repo&gt;
+git pull
+claude --continue</code></pre></div>
+          <code>claude --continue</code> เปิด session ล่าสุดของโฟลเดอร์นี้พร้อมประวัติแชทเดิม จากนั้นพิมพ์ <code>/rc</code> เพื่อเปิด Remote Control อีกครั้ง หรือใช้ <code>claude --resume</code> ถ้าอยากเลือก session เก่าจากรายการ</li>
+      </ol>
+
+      <div class="note"><span class="t">โหมด server</span><p>ถ้าอยากเปิดเครื่อง A รอไว้โดยยังไม่เริ่มงาน ให้รัน <code>claude remote-control</code> (ไม่มีขีดนำหน้า) ในโฟลเดอร์โปรเจกต์ แล้วไปเริ่ม session ใหม่จากเครื่อง B ได้เลย</p></div>
 
       <h3>เงื่อนไขและข้อจำกัด</h3>
       <ul>
