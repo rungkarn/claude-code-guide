@@ -166,6 +166,7 @@ footer { margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--line);
         <li><a href="#remote-control">Remote Control: สั่งงานจากอีกเครื่อง</a></li>
         <li><a href="#remote-control-cli">Remote Control ผ่าน CLI ทีละขั้น</a></li>
         <li><a href="#multi-session">หลาย session บนเครื่อง remote</a></li>
+        <li><a href="#cloud-setup">Cloud session ตั้งค่าทีละขั้น</a></li>
         <li><a href="#remote-session">Session บนเครื่อง remote</a></li>
         <li><a href="#handoff">HANDOFF.md คืออะไร</a></li>
         <li class="grp">ประหยัดเวลา</li>
@@ -987,6 +988,151 @@ tmux attach -t claude              # กลับเข้ามาดู</code>
           <li>2 session ใช้ CPU, RAM และโควตามากขึ้น</li>
         </ul>
       </div>
+    </section>
+
+    <section id="cloud-setup">
+      <h2>Cloud session: ตั้งค่าทีละขั้น</h2>
+      <p>cloud session รันบนเครื่องของ Anthropic <strong>ทำงานต่อได้แม้ปิดคอม</strong> และสั่งงานได้จาก browser, Desktop หรือมือถือ ตัวอย่างในหัวข้อนี้ใช้ repo Python สำหรับงาน computer vision (numpy, OpenCV, PyTorch) ที่ train โมเดลจริงบน HPC</p>
+
+      <div class="note warn"><span class="t">ใช้โควตาเดียวกับ Claude ปกติ</span><p>cloud session นับรวมใน usage limit เดียวกับการใช้ Claude และ Claude Code ทั่วไป ไม่มีโควตาแยก (ค่าเครื่อง VM ไม่คิดเพิ่ม) ถ้า usage ของสัปดาห์หมด cloud session ก็ใช้ไม่ได้เช่นกัน เช็กยอดคงเหลือได้ที่ claude.ai → Settings → Usage</p></div>
+
+      <h3>0. cloud ทำอะไรได้ และทำอะไรไม่ได้</h3>
+      <div class="tbl"><table>
+        <thead><tr><th></th><th>Cloud session</th><th>HPC (slurm)</th><th>เครื่อง local + Remote Control</th></tr></thead>
+        <tbody>
+          <tr><td>GPU</td><td><span class="pill no">ไม่มี</span></td><td><span class="pill ok">มี</span></td><td>ขึ้นกับเครื่อง</td></tr>
+          <tr><td>ข้อมูลที่ไม่อยู่ใน git</td><td><span class="pill no">ไม่มี</span> มีแค่โค้ด</td><td><span class="pill ok">มี</span></td><td><span class="pill ok">มี</span> ถ้าอยู่ในเครื่อง</td></tr>
+          <tr><td>ทรัพยากร</td><td>4 vCPU, 16 GB RAM, 30 GB disk</td><td>มาก</td><td>ขึ้นกับเครื่อง</td></tr>
+          <tr><td>ปิดคอมแล้วยังทำงาน</td><td><span class="pill ok">ใช่</span></td><td><span class="pill ok">ใช่</span></td><td><span class="pill no">ไม่</span></td></tr>
+          <tr><td>ทดสอบ GUI (tkinter, ipywidgets)</td><td><span class="pill no">ไม่ได้</span></td><td><span class="pill no">ไม่ได้</span></td><td><span class="pill ok">ได้</span></td></tr>
+        </tbody>
+      </table></div>
+      <p><strong>เหมาะกับ:</strong> แก้โค้ด, refactor, เขียนเอกสารและสคริปต์ slurm, unit test บน CPU กับข้อมูลตัวอย่างเล็ก ๆ และรีวิวแล้วเปิด PR <strong>ไม่เหมาะกับ:</strong> train หรือ inference โมเดลจริง งานที่ต้องใช้ข้อมูลเต็มชุด และทดสอบ GUI</p>
+
+      <h3>1. ให้ Claude เข้าถึง repo (ครั้งเดียว)</h3>
+      <ul>
+        <li><strong>ติดตั้ง Claude GitHub App (แนะนำ ใช้ Auto-fix PR ได้ด้วย):</strong> เปิด <code>github.com/apps/claude</code> → Install/Configure → เลือกบัญชี → <strong>Only select repositories</strong> → เลือก repo → Save</li>
+        <li><strong>หรือส่ง token ของ <code>gh</code> ที่มีอยู่แล้ว:</strong> เปิด <code>claude</code> ใน terminal แล้วพิมพ์ <code>/web-setup</code></li>
+      </ul>
+
+      <h3>2. Push งานล่าสุดขึ้น GitHub</h3>
+      <p>cloud <strong>clone จาก GitHub</strong> ไม่ได้เอาไฟล์จากเครื่องคุณ งานที่ยังไม่ push จะไม่อยู่ใน cloud ให้ <code>git status</code> แล้ว <code>git push</code> ก่อนทุกครั้ง</p>
+
+      <h3>3. สร้าง cloud environment (ครั้งเดียว)</h3>
+      <p>ที่ <code>claude.ai/code</code> หน้าเริ่ม session ใหม่ กดปุ่มแรกในแถวใต้ช่องพิมพ์ (ตัวเลือก environment) → <strong>New environment</strong></p>
+      <div class="tbl"><table>
+        <thead><tr><th>ช่อง</th><th>ค่า</th></tr></thead>
+        <tbody>
+          <tr><td>Name</td><td>เช่น <code>myproject-cpu</code></td></tr>
+          <tr><td>Network access</td><td><strong>Custom</strong> → ใช้รายการ default (Trusted) ด้วย → เพิ่มโดเมนด้านล่างในช่อง <strong>Allowed domains</strong></td></tr>
+          <tr><td>Setup script</td><td>กด <strong>Choose file</strong> เลือกไฟล์ <code>cloud/setup.sh</code> หรือวางเนื้อหา</td></tr>
+          <tr><td>Environment variables</td><td>ตามด้านล่าง</td></tr>
+        </tbody>
+      </table></div>
+      <div class="code"><div class="lbl">Allowed domains</div><button class="copy" type="button">คัดลอก</button><pre><code>download.pytorch.org
+huggingface.co
+cdn-lfs.huggingface.co</code></pre></div>
+      <ul>
+        <li><code>download.pytorch.org</code> <strong>จำเป็น</strong> สำหรับ PyTorch แบบ CPU เพราะไม่อยู่ในรายการ Trusted ถ้าใช้ PyTorch จาก PyPI ตรง ๆ บน Linux จะได้รุ่น CUDA ขนาดหลาย GB ทำให้ setup นานเกิน</li>
+        <li><code>huggingface.co</code> ใส่ไว้เผื่อโหลด pretrained weights ถ้าไม่ใช้ ลบออกได้ ส่วน PyPI, GitHub และ Anaconda อยู่ในรายการ Trusted อยู่แล้ว</li>
+      </ul>
+      <div class="code"><div class="lbl">Environment variables</div><button class="copy" type="button">คัดลอก</button><pre><code>MPLBACKEND=Agg
+PYTHONPATH=.
+BASH_DEFAULT_TIMEOUT_MS=600000</code></pre></div>
+      <p><code>MPLBACKEND=Agg</code> ให้ matplotlib เซฟรูปได้โดยไม่มีหน้าจอ · <code>PYTHONPATH=.</code> ให้ import package จาก root ของ repo ได้ · <code>BASH_DEFAULT_TIMEOUT_MS</code> ขยายเวลารอคำสั่งเป็น 10 นาที</p>
+
+      <h3>Setup script ตัวอย่าง</h3>
+      <p>รันเป็น root บน Ubuntu 24.04 ก่อน Claude เริ่มงาน ระบบรันเฉพาะตอนสร้าง cache (session แรก, ตอนแก้ script หรือรายการโดเมน และประมาณทุก 7 วัน) <strong>ต้องเสร็จภายในประมาณ 5 นาที</strong> จึงจะถูก cache และ <strong>ต้อง exit 0</strong> ไม่อย่างนั้น session จะเปิดไม่ขึ้น</p>
+      <div class="code"><div class="lbl">cloud/setup.sh</div><button class="copy" type="button">คัดลอก</button><pre><code>#!/bin/bash
+export DEBIAN_FRONTEND=noninteractive
+export PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Ubuntu 24.04 ล็อก system Python ไว้ (PEP 668) ถ้า pip ปฏิเสธ ให้ลองใหม่ด้วย --break-system-packages
+pipi() {
+  python3 -m pip install --quiet "$@" \
+    || python3 -m pip install --quiet --break-system-packages "$@"
+}
+
+apt-get update -qq || true
+apt-get install -y -qq libgl1 libglib2.0-0 &gt; /dev/null || true   # สำหรับ OpenCV
+
+# PyTorch แบบ CPU (ต้องเปิดโดเมน download.pytorch.org)
+pipi torch torchvision --index-url https://download.pytorch.org/whl/cpu \
+  || echo "WARN: CPU torch failed"
+
+pipi numpy pandas scipy opencv-python pillow scikit-image scikit-learn \
+     matplotlib seaborn tqdm pyyaml joblib pycocotools timm onnxruntime \
+     pytest ruff \
+  || echo "WARN: some packages failed"
+
+exit 0</code></pre></div>
+      <p>เก็บไฟล์นี้ไว้ใน repo ด้วย จะได้มีประวัติการแก้ และใช้ <code>requirements-cloud.txt</code> แยกไว้สำหรับรายการ package แบบ CPU ที่ติดตั้งบนเครื่อง local ได้ด้วย</p>
+
+      <h3>4. เริ่ม cloud session</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>จาก</th><th>วิธี</th></tr></thead>
+        <tbody>
+          <tr><td>Browser</td><td><code>claude.ai/code</code> → เลือก repo และ environment → พิมพ์งาน</td></tr>
+          <tr><td>Claude Desktop</td><td>New session → ตัวเลือกสถานที่ เลือกใต้หัวข้อ <strong>Cloud</strong></td></tr>
+          <tr><td>มือถือ</td><td>แอป Claude → แท็บ Code → New</td></tr>
+          <tr><td>Terminal (ในโฟลเดอร์ repo)</td><td><code>claude --cloud "งานที่ต้องการ"</code> ระบบจะ clone branch ปัจจุบันจาก GitHub</td></tr>
+        </tbody>
+      </table></div>
+      <div class="note"><span class="t">ข้อความแรกที่แนะนำ</span><p>"รัน <code>python -c "import numpy, cv2, torch; print(torch.__version__)"</code> แล้วลอง import module หลักของ repo ว่าขาด package อะไรไหม ถ้าขาดบอกชื่อมา"</p></div>
+
+      <h3>5. ระหว่างทำงาน</h3>
+      <ul>
+        <li>Claude ทำงานบน branch ของ session ไม่แตะ branch หลักโดยตรง ดูการเปลี่ยนแปลงได้จากการ์ด <strong>Changes</strong> ข้างแชท</li>
+        <li>สั่งต่อจาก terminal ได้โดยไม่ต้องเปิดเว็บ: <code>claude -p "ข้อความ" --cloud &lt;session-id&gt;</code></li>
+        <li>VM จะ pause เองเมื่อไม่มีกิจกรรม ถ้าหายนานจน VM ถูกเก็บคืน เปิด session ใหม่ ประวัติแชทยังอยู่ แต่คำสั่งที่รันค้างไว้ต้องสั่งใหม่</li>
+        <li>เปิดหลาย cloud session ได้พร้อมกัน แต่ละตัวได้ VM และ branch ของตัวเอง ไม่ต้องใช้ worktree</li>
+      </ul>
+
+      <h3>6. เอางานกลับมา</h3>
+      <ol class="steps">
+        <li><strong>ผ่าน PR (แนะนำ):</strong> สั่ง "commit, push แล้วเปิด PR" → รีวิวแล้ว merge บน GitHub → ที่เครื่อง local <code>git pull</code> ถ้าติดตั้ง Claude GitHub App เปิด <strong>Auto-fix</strong> ได้</li>
+        <li><strong>ดึงมาทำต่อในเครื่อง (teleport):</strong> ในโฟลเดอร์ repo รัน <code>claude --teleport</code> แล้วเลือก session Claude จะ checkout branch และโหลดประวัติมาให้ เป็นสำเนาแยกจาก cloud ถ้าอยากสั่งต่อจากมือถือ พิมพ์ <code>/rc</code></li>
+      </ol>
+
+      <h3 id="cloud-hpc">7. ใช้คู่กับ HPC (เช่น LANTA)</h3>
+      <p>cloud <strong>สั่งงานบน HPC โดยตรงไม่ได้</strong> เพราะ HPC มักบังคับยืนยันตัวตนหลายขั้นตอน login และการเก็บ SSH key ไว้บน cloud ไม่ปลอดภัย ให้แบ่งหน้าที่แบบนี้</p>
+      <div class="code"><div class="lbl">แบ่งหน้าที่</div><pre class="flow"><code>Cloud session        →  GitHub     →  เครื่องคุณ หรือ session SSH บน HPC  →  HPC (slurm)
+เขียนโค้ด/สคริปต์ slurm      PR, merge     git pull, sync, sbatch, ดูผล          train บน GPU</code></pre></div>
+      <ol class="steps">
+        <li><strong>สั่งใน cloud ทีเดียวให้ครบ</strong> (ประหยัดโควตา):
+          <div class="code"><div class="lbl">ข้อความถึง cloud session</div><button class="copy" type="button">คัดลอก</button><pre><code>แก้/เขียนสคริปต์สำหรับ [งาน] พร้อมสคริปต์ slurm ใน slurm/
+แล้วเขียน RUN_ON_HPC.md บอกคำสั่งที่ต้องรันบน HPC ทีละบรรทัด:
+sync, bash -n เช็ก, smoke test, sbatch ตัวจริง และคำสั่งดูผล
+commit แล้ว push ขึ้น branch ไม่ต้องรอผล</code></pre></div></li>
+        <li><strong>คุณหรือ session ในเครื่องสั่งรัน</strong> ตาม RUN_ON_HPC.md เช่น <code>git switch &lt;branch&gt;</code> → sync → <code>ssh hpc "bash -n …"</code> → <code>sbatch</code></li>
+        <li><strong>ส่งผลกลับให้ cloud แก้ต่อ</strong> เฉพาะ log ส่วนที่ error: <code>claude -p "ผล smoke test: …" --cloud &lt;session-id&gt;</code></li>
+      </ol>
+      <p>อีกทางคือเปิด Claude Desktop แบบ <strong>SSH ไปที่ login node</strong> ของ HPC แล้วให้ Claude <code>git pull</code>, <code>sbatch</code> และอ่าน log เอง ห้ามรันงานหนักบน login node ให้ใช้ <code>sbatch</code> เสมอ</p>
+
+      <div class="note warn"><span class="t">ข้อควรระวัง</span>
+        <ul>
+          <li>อย่าสั่งให้ cloud รันสคริปต์ที่อ่าน path ข้อมูลบน HPC หรือในเครื่อง เพราะไม่มีบน cloud ให้ใช้ไฟล์ตัวอย่างเล็ก ๆ ที่ commit ไว้</li>
+          <li>ห้าม commit ข้อมูลหรือโมเดลขนาดใหญ่เพื่อให้ cloud ใช้ได้ repo จะบวม</li>
+          <li>ใช้ Sonnet (<code>/model sonnet</code>) สำหรับงานเขียนสคริปต์ทั่วไป ประหยัดโควตากว่า Opus</li>
+        </ul>
+      </div>
+
+      <h3>ภาคผนวก: SessionStart hook และ Docker (ไม่บังคับ)</h3>
+      <p><strong>SessionStart hook</strong> รันทุกครั้งที่ session เริ่ม (ทั้ง local และ cloud) เหมาะกับการติดตั้งตาม <code>requirements-cloud.txt</code> ใน repo ให้เช็กตัวแปร <code>CLAUDE_CODE_REMOTE</code> เพื่อทำเฉพาะบน cloud</p>
+      <div class="code"><div class="lbl">.claude/settings.json</div><button class="copy" type="button">คัดลอก</button><pre><code>{
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [ { "type": "command", "command": "bash cloud/session_start.sh", "timeout": 600 } ] }
+    ]
+  }
+}</code></pre></div>
+      <div class="code"><div class="lbl">cloud/session_start.sh</div><button class="copy" type="button">คัดลอก</button><pre><code>#!/bin/bash
+[ "$CLAUDE_CODE_REMOTE" = "true" ] || exit 0
+python3 -m pip install --quiet -r requirements-cloud.txt \
+  || python3 -m pip install --quiet --break-system-packages -r requirements-cloud.txt
+exit 0</code></pre></div>
+      <p><strong>Docker</strong> มีให้ใช้บน cloud แต่ถ้า repo ใช้แค่ Python packages การติดตั้งด้วย pip ใน setup script ง่ายกว่า Docker เหมาะเมื่อมี service ต้องรันคู่ เช่น ฐานข้อมูล หรืออยากได้ environment เดียวกันทุกเครื่อง ให้ setup script รัน <code>docker build</code> ไว้ล่วงหน้า cache จะเก็บ image ไว้ให้</p>
+      <p>ข้อมูลอ้างอิง: <a href="https://code.claude.com/docs/en/claude-code-on-the-web" target="_blank" rel="noopener">Claude Code in the cloud</a> · <a href="https://code.claude.com/docs/en/cloud-environments" target="_blank" rel="noopener">Cloud environments</a></p>
     </section>
 
     <section id="remote-session">
